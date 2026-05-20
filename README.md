@@ -10,6 +10,10 @@ B11901043 張庭碩
 B11901112 卜紹秦
 
 ---
+Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
 How to run:
 ```bash
