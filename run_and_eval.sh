@@ -21,10 +21,12 @@ else
   exit 1
 fi
 
+K=$(python3 -c "import pandas as pd; print(pd.read_csv('$GOLDEN_FILE')['Bug'].nunique())")
+
 python src/regr_fail_bucketing_v2.py \
   --input $INPUT_FILE \
   --output output.csv \
-  --k 2 \
+  --k $K \
   --method $METHOD \
   --clustering simple \
   -v

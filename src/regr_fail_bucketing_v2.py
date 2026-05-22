@@ -22,6 +22,7 @@ from log_parser import (
 from strategies import (
     CharEmbeddingExtractor,
     SimTraceExtractor,
+    SimUvmTraceExtractor,
     MismatchAwareCharExtractor,
     WeightedMultiViewExtractor,
     SimpleHierarchicalClustering,
@@ -97,7 +98,7 @@ Examples:
   python regr_fail_bucketing_v2.py --input input.csv --output output.csv --k 2 \\
     --method char --clustering simple --linkage complete
 
-Available methods: char, sim_trace, mismatch_aware, weighted, analysis
+Available methods: char, sim_trace, sim_uvm_trace, mismatch_aware, weighted, analysis
 Available clustering: simple, errortype
         """
     )
@@ -107,7 +108,7 @@ Available clustering: simple, errortype
     
     # Feature extraction method
     parser.add_argument("--method", 
-                       choices=["char", "sim_trace", "mismatch_aware", "weighted", "analysis"],
+                       choices=["char", "sim_trace", "sim_uvm_trace", "mismatch_aware", "weighted", "analysis"],
                        default="char",
                        help="Feature extraction method (default: char)")
     parser.add_argument(
@@ -175,7 +176,7 @@ Available clustering: simple, errortype
         cases.append(case)
     
     # Stage 1: Log parsing (skip for char / analysis)
-    skip_parse = args.method in ("char", "sim_trace", "mismatch_aware", "analysis")
+    skip_parse = args.method in ("char", "sim_trace", "sim_uvm_trace", "mismatch_aware", "analysis")
     if args.verbose:
         print(f"[*] Stage 1: {'Skipping log parsing' if skip_parse else 'Parsing logs'}...")
     
@@ -192,6 +193,8 @@ Available clustering: simple, errortype
         feature_extractor = CharEmbeddingExtractor(char_dim=128)
     elif args.method == "sim_trace":
         feature_extractor = SimTraceExtractor(char_dim=128)
+    elif args.method == "sim_uvm_trace":
+        feature_extractor = SimUvmTraceExtractor(uvm_dim=64, trace_dim=128)
     elif args.method == "mismatch_aware":
         feature_extractor = MismatchAwareCharExtractor(char_dim=128)
     elif args.method == "weighted":

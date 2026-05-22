@@ -127,6 +127,33 @@ class SimTraceExtractor(FeatureExtractor):
         return self.char_dim * 2
 
 
+class SimUvmTraceExtractor(FeatureExtractor):
+    """
+    UVM_FATAL/ERROR ROI char (64d) + trace tail instr char (128d).
+
+    Exploration: set_2 BA 0.959 (vs 0.903 char); set_1 BA 0.625 (same as sim_trace).
+    """
+
+    def __init__(self, uvm_dim: int = 64, trace_dim: int = 128):
+        self.uvm_dim = uvm_dim
+        self.trace_dim = trace_dim
+        self._char = CharEmbeddingExtractor(char_dim=trace_dim)
+
+    def extract(self, cases: List[Dict], parsed_results: List[Dict]) -> np.ndarray:
+        from analysis_features import extract_sim_uvm_roi
+
+        full = self._char.extract(cases, parsed_results)
+        rows = []
+        for i, case in enumerate(cases):
+            uvm = extract_sim_uvm_roi(case["Sim Log"], self.uvm_dim)
+            trace_part = full[i, self.trace_dim : 2 * self.trace_dim]
+            rows.append(np.concatenate([uvm, trace_part]))
+        return np.array(rows)
+
+    def get_feature_dim(self) -> int:
+        return self.uvm_dim + self.trace_dim
+
+
 class MismatchAwareCharExtractor(FeatureExtractor):
     """
     Full char embedding but zero regr features when regr.log has Mismatch[].
