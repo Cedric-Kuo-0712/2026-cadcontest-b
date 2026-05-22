@@ -22,3 +22,9 @@ python src/regr_fail_bucketing.py \
     --output output.csv \
     --k 2
 ```
+Evaluation:
+```bash
+python3 eval.py \
+  --output output.csv \
+  --golden B_samples_20260516/problem/benchmark_set_1/golden.csv
+```
