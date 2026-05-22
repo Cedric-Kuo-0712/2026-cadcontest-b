@@ -56,10 +56,6 @@ def normalize_message(text: str) -> str:
     return _WS.sub(" ", out).strip()
 
 
-def _fatal_tag(text: str) -> str:
-    return re.sub(r"[^A-Za-z]+", "_", text)[:80]
-
-
 # ---------------------------------------------------------------------------
 # Data model
 # ---------------------------------------------------------------------------
@@ -147,8 +143,6 @@ _RE_VERDICT_FAIL = re.compile(r"RISC-V UVM TEST FAILED")
 _RE_ASSERT_NAME = re.compile(r"ASSERT FAILED\] \[[^.\]]*\.([^.\]]+)\]")
 _RE_ASSERT_PROP = re.compile(r"\] ([A-Za-z_][A-Za-z0-9_]*):")
 _RE_TESTNAME = re.compile(r"\+UVM_TESTNAME=(\S+)")
-_RE_BIN = re.compile(r"\+bin=(\S+)")
-_RE_BIN_NAME = re.compile(r"/([A-Za-z0-9_]+_test)_\d+\.bin")
 _RE_TRACE_LINE = re.compile(
     r"^\s*(\d+)\s+(\d+)\s+([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s+(\S+)"
 )
@@ -165,24 +159,13 @@ _FATAL_KIND_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
 _SIM_MAX_BYTES = 50 * 1024 * 1024
 _TRACE_TAIL = 64
 _MISMATCH_CONTEXT = 8   # instructions before/after first mismatch retire index
+_EARLY_MISMATCH_MATCHED = 200
+_EARLY_MISMATCH_RETIRE = 150
 
 
 # ---------------------------------------------------------------------------
 # Lightweight regr routing
 # ---------------------------------------------------------------------------
-
-def detect_regr_kind(path: str) -> str:
-    try:
-        with open_log(path) as f:
-            for line in f:
-                if _RE_MISMATCH.match(line):
-                    return "mismatch"
-                if _RE_REGR_FAILED.match(line.strip()):
-                    return "failed_only"
-    except OSError:
-        pass
-    return "unknown"
-
 
 def extract_regr_mismatch(path: str) -> dict:
     """Parse the first mismatch block from regr.log."""
@@ -196,34 +179,32 @@ def extract_regr_mismatch(path: str) -> dict:
         "matched_count": 0,
         "mismatch_count": 0,
     }
+    found_ibex = False
+    found_spike = False
+    found_counts = False
     try:
         with open_log(path) as f:
-            data = f.read()
+            for ln in f:
+                m = _RE_IBEX_MISMATCH.match(ln)
+                if m:
+                    result["retire_index"] = int(m.group(1))
+                    result["ibex_pc"] = m.group(2).lower()
+                    result["ibex_mnemonic"] = m.group(3)
+                    found_ibex = True
+                m = _RE_SPIKE_MISMATCH.match(ln)
+                if m:
+                    result["spike_mnemonic"] = m.group(1)
+                    found_spike = True
+                m = _RE_MISMATCH_COUNTS.search(ln)
+                if m:
+                    result["matched_count"] = int(m.group(1))
+                    result["mismatch_count"] = int(m.group(2))
+                    found_counts = True
+                if found_ibex and found_spike and found_counts:
+                    break
     except OSError:
         return result
 
-    ibex_mnem = ""
-    spike_mnem = ""
-    retire_idx = 0
-    ibex_pc = ""
-    for ln in data.splitlines():
-        m = _RE_IBEX_MISMATCH.match(ln)
-        if m:
-            retire_idx = int(m.group(1))
-            ibex_pc = m.group(2).lower()
-            ibex_mnem = m.group(3)
-        m = _RE_SPIKE_MISMATCH.match(ln)
-        if m:
-            spike_mnem = m.group(1)
-        m = _RE_MISMATCH_COUNTS.search(ln)
-        if m:
-            result["matched_count"] = int(m.group(1))
-            result["mismatch_count"] = int(m.group(2))
-
-    result["retire_index"] = retire_idx
-    result["ibex_mnemonic"] = ibex_mnem
-    result["spike_mnemonic"] = spike_mnem
-    result["ibex_pc"] = ibex_pc
     return result
 
 
@@ -231,21 +212,51 @@ def extract_regr(path: str, *, kind: str | None = None) -> dict:
     if kind == "mismatch":
         return extract_regr_mismatch(path)
 
-    result = {"kind": kind or "unknown", "test_name": ""}
+    result = {
+        "kind": kind or "unknown",
+        "test_name": "",
+        "retire_index": 0,
+        "ibex_mnemonic": "",
+        "spike_mnemonic": "",
+        "ibex_pc": "",
+        "matched_count": 0,
+        "mismatch_count": 0,
+    }
+    found_ibex = False
+    found_spike = False
+    found_counts = False
     try:
         with open_log(path) as f:
-            data = f.read()
+            for ln in f:
+                if _RE_MISMATCH.match(ln):
+                    result["kind"] = "mismatch"
+                if result["kind"] == "mismatch":
+                    m = _RE_IBEX_MISMATCH.match(ln)
+                    if m:
+                        result["retire_index"] = int(m.group(1))
+                        result["ibex_pc"] = m.group(2).lower()
+                        result["ibex_mnemonic"] = m.group(3)
+                        found_ibex = True
+                    m = _RE_SPIKE_MISMATCH.match(ln)
+                    if m:
+                        result["spike_mnemonic"] = m.group(1)
+                        found_spike = True
+                    m = _RE_MISMATCH_COUNTS.search(ln)
+                    if m:
+                        result["matched_count"] = int(m.group(1))
+                        result["mismatch_count"] = int(m.group(2))
+                        found_counts = True
+                    if found_ibex and found_spike and found_counts:
+                        break
+                else:
+                    m = _RE_REGR_FAILED.match(ln.strip())
+                    if m:
+                        result["kind"] = "failed_only"
+                        result["test_name"] = re.sub(r"\.\d+$", "", m.group(1))
+                        break
     except OSError:
         return result
-    if result["kind"] == "unknown":
-        if any(_RE_MISMATCH.match(ln) for ln in data.splitlines()):
-            return extract_regr_mismatch(path)
-    for ln in data.splitlines():
-        m = _RE_REGR_FAILED.match(ln.strip())
-        if m:
-            result["kind"] = "failed_only"
-            result["test_name"] = re.sub(r"\.\d+$", "", m.group(1))
-            break
+
     return result
 
 
@@ -516,17 +527,15 @@ def build_case_features(
     regr_path = _resolve(base_dir, regr_rel)
     trace_path = _resolve(base_dir, trace_rel)
 
-    regr_kind = detect_regr_kind(regr_path)
+    regr = extract_regr(regr_path)
 
-    if regr_kind == "mismatch":
-        regr = extract_regr(regr_path, kind="mismatch")
+    if regr["kind"] == "mismatch":
         sim = _empty_sim()
         trace = extract_trace(
             trace_path,
             mismatch_retire_index=regr["retire_index"],
         )
     else:
-        regr = extract_regr(regr_path, kind=regr_kind)
         sim = extract_sim(_resolve(base_dir, sim_rel))
         trace = _empty_trace()
 
@@ -536,7 +545,10 @@ def build_case_features(
     spike_mnem = regr.get("spike_mnemonic", "")
     early_mismatch = (
         regr["kind"] == "mismatch"
-        and (matched_count < 200 or (0 < retire_index < 150))
+        and (
+            matched_count < _EARLY_MISMATCH_MATCHED
+            or (0 < retire_index < _EARLY_MISMATCH_RETIRE)
+        )
     )
     same_reg_pair = bool(ibex_mnem) and ibex_mnem == spike_mnem
 

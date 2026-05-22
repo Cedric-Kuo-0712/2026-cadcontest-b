@@ -22,36 +22,52 @@ def cluster_by_signature(features: Sequence[CaseFeatures]) -> list[int]:
 
 
 def _tfidf_matrix(features: Sequence[CaseFeatures]):
+    from scipy.sparse import hstack
     from sklearn.feature_extraction.text import TfidfVectorizer
 
     corpus = [
         f.text_blob if f.text_blob else f"empty_case_{f.case_id}" for f in features
     ]
-    vec = TfidfVectorizer(
+    # High-dimensional feature space:
+    # - word n-grams capture semantic tokens (mode/fatal/assert/mismatch context)
+    # - char_wb n-grams capture near-duplicate templates with slight token drift
+    word_vec = TfidfVectorizer(
         lowercase=True,
-        ngram_range=(1, 2),
+        ngram_range=(1, 3),
         min_df=1,
         max_df=1.0,
         sublinear_tf=True,
         token_pattern=r"[A-Za-z_][A-Za-z0-9_<>]+",
     )
-    return vec.fit_transform(corpus)
+    char_vec = TfidfVectorizer(
+        lowercase=True,
+        analyzer="char_wb",
+        ngram_range=(3, 6),
+        min_df=1,
+        max_df=1.0,
+        sublinear_tf=True,
+    )
+    word_mat = word_vec.fit_transform(corpus)
+    char_mat = char_vec.fit_transform(corpus)
+    return hstack([word_mat, char_mat], format="csr")
 
 
 def cluster_by_tfidf(features: Sequence[CaseFeatures], k: int) -> list[int]:
     from sklearn.cluster import AgglomerativeClustering
+    from sklearn.metrics.pairwise import cosine_distances
 
     n = len(features)
     if n <= 1:
         return [0] * n
     k_eff = max(1, min(k, n))
-    dense = _tfidf_matrix(features).toarray()
     if k_eff == 1:
         return [0] * n
+    mat = _tfidf_matrix(features)
+    cos_dist = np.clip(cosine_distances(mat), 0.0, 1.0)
     agg = AgglomerativeClustering(
-        n_clusters=k_eff, metric="cosine", linkage="average"
+        n_clusters=k_eff, metric="precomputed", linkage="average"
     )
-    return agg.fit_predict(dense).tolist()
+    return agg.fit_predict(cos_dist).tolist()
 
 
 def _jaccard(a: tuple, b: tuple) -> float:
@@ -119,6 +135,10 @@ def _mismatch_distance(sa: CaseSignature, sb: CaseSignature) -> float:
     uniform_dist = abs(sa.tail_mnem_uniformity - sb.tail_mnem_uniformity)
     early_dist = 0.0 if sa.early_mismatch == sb.early_mismatch else 0.70
     same_reg_dist = 0.0 if sa.same_reg_pair == sb.same_reg_pair else 0.85
+    same_spike = (
+        bool(sa.mismatch_spike_mnemonic)
+        and sa.mismatch_spike_mnemonic == sb.mismatch_spike_mnemonic
+    )
 
     score = float(min(
         1.0,
@@ -144,6 +164,8 @@ def _mismatch_distance(sa: CaseSignature, sb: CaseSignature) -> float:
         score = max(score, 0.84)
     if sa.same_reg_pair != sb.same_reg_pair:
         score = max(score, 0.88)
+    if same_spike:
+        score = max(0.0, score - 0.16)
     return score
 
 
@@ -164,17 +186,6 @@ def _cross_mode_distance(sa: CaseSignature, sb: CaseSignature) -> float:
         return 0.95
 
     return 1.0
-
-
-def _mismatch_outlier_scores(
-    sigs: Sequence[CaseSignature], D: np.ndarray
-) -> dict[int, float]:
-    mismatch_idxs = [i for i, s in enumerate(sigs) if s.failure_mode == "mismatch"]
-    scores: dict[int, float] = {}
-    for i in mismatch_idxs:
-        others = [j for j in mismatch_idxs if j != i]
-        scores[i] = float(np.mean([D[i, j] for j in others])) if others else 0.0
-    return scores
 
 
 def _non_mismatch_distance(sa: CaseSignature, sb: CaseSignature) -> float:
@@ -247,18 +258,11 @@ def _build_distance_matrix(features: Sequence[CaseFeatures]) -> np.ndarray:
                 D[i, j] = _pairwise_signature_distance(sigs[i], sigs[j])
             D[j, i] = D[i, j]
 
-    outlier_scores = _mismatch_outlier_scores(sigs, D)
-    outliers: set[int] = set()
-    if outlier_scores:
-        threshold = float(np.percentile(list(outlier_scores.values()), 75))
-        outliers = {i for i, s in outlier_scores.items() if s >= max(threshold, 0.74)}
-
     try:
-        tfidf = _tfidf_matrix(features).toarray()
-        norms = np.linalg.norm(tfidf, axis=1)
-        norms_safe = np.where(norms > 0, norms, 1.0)
-        normed = tfidf / norms_safe[:, None]
-        cos_dist = np.clip(1.0 - normed @ normed.T, 0.0, 1.0)
+        from sklearn.metrics.pairwise import cosine_distances
+
+        tfidf = _tfidf_matrix(features)
+        cos_dist = np.clip(cosine_distances(tfidf), 0.0, 1.0)
         for i in range(n):
             for j in range(i + 1, n):
                 sig_ij = D[i, j]
@@ -273,12 +277,6 @@ def _build_distance_matrix(features: Sequence[CaseFeatures]) -> np.ndarray:
                     D[i, j] = D[j, i] = 0.0
     except Exception:
         pass
-
-    if outlier_scores:
-        core = {i for i in outlier_scores if i not in outliers}
-        for i in outliers:
-            for j in core:
-                D[i, j] = D[j, i] = max(D[i, j], 0.88)
 
     np.fill_diagonal(D, 0.0)
     return D
