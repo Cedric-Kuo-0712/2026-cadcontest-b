@@ -76,7 +76,8 @@ def _fatal_kind_distance(ka: str, kb: str) -> float:
         return 0.0
     if ka == kb:
         return 0.0
-    # Same timeout family from the same checker file often means same bug.
+    if ka == "no_dret" or kb == "no_dret":
+        return 1.0
     timeout_kinds = {"debug_timeout", "irq_timeout"}
     if ka in timeout_kinds and kb in timeout_kinds:
         return 0.45
@@ -92,32 +93,88 @@ def _fatal_kind_distance(ka: str, kb: str) -> float:
 
 def _mismatch_distance(sa: CaseSignature, sb: CaseSignature) -> float:
     len_dist = 0.0 if sa.trace_length_bucket == sb.trace_length_bucket else 0.6
-    if sa.trace_length_bucket == "short" or sb.trace_length_bucket == "short":
+    short_a = sa.trace_length_bucket == "short"
+    short_b = sb.trace_length_bucket == "short"
+    if short_a or short_b:
         if sa.trace_length_bucket != sb.trace_length_bucket:
-            len_dist = 0.85
+            len_dist = 0.95
 
-    loop_dist = 1.0 - _jaccard(sa.trace_loop_mnems, sb.trace_loop_mnems)
+    ibex_diff = (
+        bool(sa.mismatch_ibex_mnemonic)
+        and sa.mismatch_ibex_mnemonic != sb.mismatch_ibex_mnemonic
+    )
+    spike_diff = (
+        bool(sa.mismatch_spike_mnemonic)
+        and sa.mismatch_spike_mnemonic != sb.mismatch_spike_mnemonic
+    )
+    ibex_match = 0.0 if not ibex_diff else 0.75
+    spike_match = 0.0 if not spike_diff else 0.75
+
+    ctx_dist = 1.0 - _tuple_overlap(
+        sa.mismatch_context_mnemonics, sb.mismatch_context_mnemonics
+    )
+
+    loop_dist = 0.0 if sa.has_signature_loop == sb.has_signature_loop else 0.80
     repeat_dist = 0.0 if sa.has_repeating_tail == sb.has_repeating_tail else 0.35
     uniform_dist = abs(sa.tail_mnem_uniformity - sb.tail_mnem_uniformity)
-    tail_dist = 1.0 - _tuple_overlap(sa.trace_tail_mnemonics, sb.trace_tail_mnemonics)
+    early_dist = 0.0 if sa.early_mismatch == sb.early_mismatch else 0.70
+    same_reg_dist = 0.0 if sa.same_reg_pair == sb.same_reg_pair else 0.85
 
-    # High tail uniformity with a single mnemonic (e.g. all ``sw``) is a strong
-    # separator for short-run mismatches.
-    mono_a = sa.tail_mnem_uniformity >= 0.9 and len(set(sa.trace_tail_mnemonics)) <= 2
-    mono_b = sb.tail_mnem_uniformity >= 0.9 and len(set(sb.trace_tail_mnemonics)) <= 2
-    mono_dist = 0.0 if mono_a == mono_b else 0.7
-    if mono_a and mono_b and sa.trace_tail_mnemonics != sb.trace_tail_mnemonics:
-        mono_dist = 0.85
-
-    return float(min(
+    score = float(min(
         1.0,
-        0.30 * len_dist
-        + 0.25 * loop_dist
-        + 0.15 * tail_dist
-        + 0.10 * repeat_dist
-        + 0.10 * uniform_dist
-        + 0.10 * mono_dist,
+        0.18 * ibex_match
+        + 0.16 * spike_match
+        + 0.24 * ctx_dist
+        + 0.14 * len_dist
+        + 0.10 * loop_dist
+        + 0.05 * repeat_dist
+        + 0.04 * uniform_dist
+        + 0.04 * early_dist
+        + 0.05 * same_reg_dist,
     ))
+
+    # Different (ibex, spike) pair at first mismatch → different bug family.
+    if ibex_diff and spike_diff:
+        score = max(score, 0.80)
+    if short_a != short_b:
+        score = max(score, 0.88)
+    if sa.has_signature_loop != sb.has_signature_loop:
+        score = max(score, 0.82)
+    if sa.early_mismatch != sb.early_mismatch:
+        score = max(score, 0.84)
+    if sa.same_reg_pair != sb.same_reg_pair:
+        score = max(score, 0.88)
+    return score
+
+
+def _cross_mode_distance(sa: CaseSignature, sb: CaseSignature) -> float:
+    """Soft distance when one case is mismatch and the other is not."""
+    fatal = sa if sa.failure_mode != "mismatch" else sb
+    mismatch = sb if sa.failure_mode != "mismatch" else sa
+
+    if fatal.sim_fatal_kind == "no_dret":
+        if mismatch.early_mismatch and mismatch.trace_length_bucket == "short":
+            return 0.68
+        return 0.92
+
+    if fatal.failure_mode == "assert" and fatal.sim_error_asserts:
+        return 1.0
+
+    if fatal.sim_fatal_kind and mismatch.has_signature_loop:
+        return 0.95
+
+    return 1.0
+
+
+def _mismatch_outlier_scores(
+    sigs: Sequence[CaseSignature], D: np.ndarray
+) -> dict[int, float]:
+    mismatch_idxs = [i for i, s in enumerate(sigs) if s.failure_mode == "mismatch"]
+    scores: dict[int, float] = {}
+    for i in mismatch_idxs:
+        others = [j for j in mismatch_idxs if j != i]
+        scores[i] = float(np.mean([D[i, j] for j in others])) if others else 0.0
+    return scores
 
 
 def _non_mismatch_distance(sa: CaseSignature, sb: CaseSignature) -> float:
@@ -143,6 +200,18 @@ def _non_mismatch_distance(sa: CaseSignature, sb: CaseSignature) -> float:
         else 0.35
     )
 
+    if "no_dret" in (sa.sim_fatal_kind, sb.sim_fatal_kind):
+        other = sb.sim_fatal_kind if sa.sim_fatal_kind == "no_dret" else sa.sim_fatal_kind
+        if other and other != "no_dret":
+            return 0.90
+
+    has_a, has_b = bool(sa.sim_error_asserts), bool(sb.sim_error_asserts)
+    if has_a != has_b:
+        return max(
+            0.75,
+            mode_penalty + 0.30 * fatal_dist + 0.30 * assert_dist + 0.10 * src_dist,
+        )
+
     # Shared assertion names are the strongest same-bug signal for X-prop bugs.
     if assert_sim == 1.0 and sa.sim_error_asserts:
         return float(min(1.0, 0.20 * fatal_dist + 0.10 * mode_penalty))
@@ -161,7 +230,7 @@ def _pairwise_signature_distance(sa: CaseSignature, sb: CaseSignature) -> float:
     if sa.failure_mode == "mismatch" and sb.failure_mode == "mismatch":
         return _mismatch_distance(sa, sb)
     if sa.failure_mode == "mismatch" or sb.failure_mode == "mismatch":
-        return 1.0
+        return _cross_mode_distance(sa, sb)
     return _non_mismatch_distance(sa, sb)
 
 
@@ -178,20 +247,39 @@ def _build_distance_matrix(features: Sequence[CaseFeatures]) -> np.ndarray:
                 D[i, j] = _pairwise_signature_distance(sigs[i], sigs[j])
             D[j, i] = D[i, j]
 
+    outlier_scores = _mismatch_outlier_scores(sigs, D)
+    outliers: set[int] = set()
+    if outlier_scores:
+        threshold = float(np.percentile(list(outlier_scores.values()), 75))
+        outliers = {i for i, s in outlier_scores.items() if s >= max(threshold, 0.74)}
+
     try:
         tfidf = _tfidf_matrix(features).toarray()
         norms = np.linalg.norm(tfidf, axis=1)
         norms_safe = np.where(norms > 0, norms, 1.0)
         normed = tfidf / norms_safe[:, None]
         cos_dist = np.clip(1.0 - normed @ normed.T, 0.0, 1.0)
-        D = 0.70 * D + 0.30 * cos_dist
-        # Preserve must-link pairs after TF-IDF blend.
+        for i in range(n):
+            for j in range(i + 1, n):
+                sig_ij = D[i, j]
+                if sigs[i].failure_mode == "mismatch" and sigs[j].failure_mode == "mismatch":
+                    w = 0.96 if sig_ij < 0.72 else 1.0
+                else:
+                    w = 0.85 if sig_ij < 0.72 else 0.92
+                D[i, j] = D[j, i] = w * sig_ij + (1.0 - w) * cos_dist[i, j]
         for i in range(n):
             for j in range(i + 1, n):
                 if keys[i] == keys[j]:
                     D[i, j] = D[j, i] = 0.0
     except Exception:
         pass
+
+    if outlier_scores:
+        core = {i for i in outlier_scores if i not in outliers}
+        for i in outliers:
+            for j in core:
+                D[i, j] = D[j, i] = max(D[i, j], 0.88)
+
     np.fill_diagonal(D, 0.0)
     return D
 
@@ -300,6 +388,8 @@ def summarize(features: Iterable[CaseFeatures], labels: Sequence[int]) -> str:
         lines.append(
             f"bucket {lbl}: {len(members)} case(s) "
             f"mode={sig.failure_mode} fatal={sig.sim_fatal_kind or '-'} "
+            f"mismatch={sig.mismatch_ibex_mnemonic or '-'}"
+            f"/{sig.mismatch_spike_mnemonic or '-'} "
             f"asserts={list(sig.sim_error_asserts)} regr={sig.regr_kind} "
             f"trace_len={sig.trace_length_bucket or '-'}"
         )

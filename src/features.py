@@ -5,7 +5,9 @@ for TF-IDF / agglomerative clustering.
 
 Routing policy
 --------------
-* ``regr.log`` with ``Mismatch[N]:``  →  features from ``trace.log`` only.
+* ``regr.log`` with ``Mismatch[N]:``  →  features from ``trace.log``, plus the
+  first mismatch line from ``regr.log`` and trace instructions surrounding
+  that retire index.
 * otherwise                           →  features from ``sim.log`` + ``regr.log``.
 """
 
@@ -76,23 +78,35 @@ class CaseSignature:
     regr_test_name: str = ""
     sim_uvm_testname: str = ""
 
-    # trace (mismatch-primary; optional tie-breaker elsewhere)
+    # trace (mismatch-primary)
     trace_tail_mnemonics: tuple[str, ...] = ()
     trace_loop_mnems: tuple[str, ...] = ()   # sorted unique mnems in tail window
     trace_length_bucket: str = ""            # short | medium | long | huge
     tail_mnem_uniformity: float = 0.0        # 1.0 = all same mnemonic in tail
     has_repeating_tail: bool = False
     trace_total: int = 0
+    has_signature_loop: bool = False       # tail has auipc+sw+c.j signature pattern
+
+    # first mismatch (from regr.log + trace context at retire index)
+    mismatch_retire_index: int = 0
+    mismatch_ibex_mnemonic: str = ""
+    mismatch_spike_mnemonic: str = ""
+    mismatch_context_mnemonics: tuple[str, ...] = ()  # trace window at mismatch
+    mismatch_matched_count: int = 0
+    early_mismatch: bool = False          # few matched instrs or low retire index
+    same_reg_pair: bool = False           # ibex mnemonic == spike mnemonic
 
     def categorical_key(self) -> tuple:
         if self.failure_mode == "mismatch":
             return (
                 "mismatch",
-                self.trace_loop_mnems,
+                self.mismatch_ibex_mnemonic,
+                self.mismatch_spike_mnemonic,
+                self.has_signature_loop,
                 self.trace_length_bucket,
                 self.has_repeating_tail,
-                round(self.tail_mnem_uniformity, 2),
-                self.trace_tail_mnemonics,
+                self.same_reg_pair,
+                self.early_mismatch,
             )
         return (
             self.failure_mode,
@@ -115,6 +129,15 @@ class CaseFeatures:
 # ---------------------------------------------------------------------------
 
 _RE_MISMATCH = re.compile(r"^Mismatch\[\d+\]:")
+_RE_IBEX_MISMATCH = re.compile(
+    r"^ibex\[(\d+)\]\s*:\s*pc\[([0-9a-fA-F]+)\]\s+([a-z][a-z0-9.]*)\b"
+)
+_RE_SPIKE_MISMATCH = re.compile(
+    r"^spike\[\d+\]\s*:\s*(?:pc\[[^\]]+\]\s+)?([a-z][a-z0-9.]*)\b"
+)
+_RE_MISMATCH_COUNTS = re.compile(
+    r"\[FAILED\]:\s*(\d+)\s+matched,\s*(\d+)\s+mismatch"
+)
 _RE_REGR_FAILED = re.compile(r"^([A-Za-z0-9_.]+)\s*:\s*\[FAILED\]")
 _RE_UVM_FATAL = re.compile(r"UVM_FATAL\b.*")
 _RE_UVM_ERROR = re.compile(r"UVM_ERROR\b.*")
@@ -141,6 +164,7 @@ _FATAL_KIND_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
 
 _SIM_MAX_BYTES = 50 * 1024 * 1024
 _TRACE_TAIL = 64
+_MISMATCH_CONTEXT = 8   # instructions before/after first mismatch retire index
 
 
 # ---------------------------------------------------------------------------
@@ -160,10 +184,54 @@ def detect_regr_kind(path: str) -> str:
     return "unknown"
 
 
-def extract_regr(path: str, *, kind: str | None = None) -> dict:
-    result = {"kind": kind or "unknown", "test_name": ""}
-    if result["kind"] == "mismatch":
+def extract_regr_mismatch(path: str) -> dict:
+    """Parse the first mismatch block from regr.log."""
+    result = {
+        "kind": "mismatch",
+        "test_name": "",
+        "retire_index": 0,
+        "ibex_mnemonic": "",
+        "spike_mnemonic": "",
+        "ibex_pc": "",
+        "matched_count": 0,
+        "mismatch_count": 0,
+    }
+    try:
+        with open_log(path) as f:
+            data = f.read()
+    except OSError:
         return result
+
+    ibex_mnem = ""
+    spike_mnem = ""
+    retire_idx = 0
+    ibex_pc = ""
+    for ln in data.splitlines():
+        m = _RE_IBEX_MISMATCH.match(ln)
+        if m:
+            retire_idx = int(m.group(1))
+            ibex_pc = m.group(2).lower()
+            ibex_mnem = m.group(3)
+        m = _RE_SPIKE_MISMATCH.match(ln)
+        if m:
+            spike_mnem = m.group(1)
+        m = _RE_MISMATCH_COUNTS.search(ln)
+        if m:
+            result["matched_count"] = int(m.group(1))
+            result["mismatch_count"] = int(m.group(2))
+
+    result["retire_index"] = retire_idx
+    result["ibex_mnemonic"] = ibex_mnem
+    result["spike_mnemonic"] = spike_mnem
+    result["ibex_pc"] = ibex_pc
+    return result
+
+
+def extract_regr(path: str, *, kind: str | None = None) -> dict:
+    if kind == "mismatch":
+        return extract_regr_mismatch(path)
+
+    result = {"kind": kind or "unknown", "test_name": ""}
     try:
         with open_log(path) as f:
             data = f.read()
@@ -171,8 +239,7 @@ def extract_regr(path: str, *, kind: str | None = None) -> dict:
         return result
     if result["kind"] == "unknown":
         if any(_RE_MISMATCH.match(ln) for ln in data.splitlines()):
-            result["kind"] = "mismatch"
-            return result
+            return extract_regr_mismatch(path)
     for ln in data.splitlines():
         m = _RE_REGR_FAILED.match(ln.strip())
         if m:
@@ -264,6 +331,28 @@ def extract_sim(path: str) -> dict:
 # trace.log
 # ---------------------------------------------------------------------------
 
+def _has_signature_loop(loop_mnems: tuple[str, ...]) -> bool:
+    """Detect Ibex DV signature-write loop (auipc / sw / c.j)."""
+    s = set(loop_mnems)
+    return "auipc" in s and "sw" in s and ("c.j" in s or "c.jal" in s)
+
+
+def _empty_trace() -> dict:
+    return {
+        "mnemonics": (),
+        "loop_mnems": (),
+        "unique_pcs": 0,
+        "total": 0,
+        "has_repeating_tail": False,
+        "tail_text": "",
+        "length_bucket": "",
+        "tail_uniformity": 0.0,
+        "mismatch_context_mnemonics": (),
+        "mismatch_context_text": "",
+        "has_signature_loop": False,
+    }
+
+
 def _length_bucket(total: int) -> str:
     if total < 1_000:
         return "short"
@@ -274,7 +363,16 @@ def _length_bucket(total: int) -> str:
     return "huge"
 
 
-def extract_trace(path: str, tail: int = _TRACE_TAIL) -> dict:
+def extract_trace(
+    path: str,
+    tail: int = _TRACE_TAIL,
+    *,
+    mismatch_retire_index: int = 0,
+    context: int = _MISMATCH_CONTEXT,
+) -> dict:
+    """Stream trace.log; always compute tail stats, optionally capture context
+    around ``mismatch_retire_index`` (1-based, matching ``ibex[N]`` in regr.log).
+    """
     result = {
         "mnemonics": (),
         "loop_mnems": (),
@@ -284,17 +382,41 @@ def extract_trace(path: str, tail: int = _TRACE_TAIL) -> dict:
         "tail_text": "",
         "length_bucket": "",
         "tail_uniformity": 0.0,
+        "mismatch_context_mnemonics": (),
+        "mismatch_context_text": "",
+        "has_signature_loop": False,
     }
     window: deque[tuple[str, str]] = deque(maxlen=tail)
+    before: deque[str] = deque(maxlen=context)
+    at_mismatch: str = ""
+    after: list[str] = []
+    capturing_after = False
+    after_remaining = 0
     total = 0
+    target = mismatch_retire_index
+
     try:
         with open_log(path) as f:
             for line in f:
                 m = _RE_TRACE_LINE.match(line)
                 if not m:
                     continue
-                window.append((m.group(3).lower(), m.group(5)))
                 total += 1
+                mnem = m.group(5)
+                window.append((m.group(3).lower(), mnem))
+
+                if target <= 0:
+                    continue
+
+                if total < target:
+                    before.append(mnem)
+                elif total == target:
+                    at_mismatch = mnem
+                    capturing_after = True
+                    after_remaining = context
+                elif capturing_after and after_remaining > 0:
+                    after.append(mnem)
+                    after_remaining -= 1
     except OSError:
         return result
 
@@ -313,8 +435,15 @@ def extract_trace(path: str, tail: int = _TRACE_TAIL) -> dict:
     result["mnemonics"] = tuple(mnems[-8:])
     result["loop_mnems"] = tuple(sorted(set(mnems)))
     result["tail_text"] = " ".join(mnems[-16:])
+    result["has_signature_loop"] = _has_signature_loop(result["loop_mnems"])
     counts = Counter(mnems[-16:])
     result["tail_uniformity"] = counts.most_common(1)[0][1] / max(len(mnems[-16:]), 1)
+
+    if target > 0 and at_mismatch:
+        ctx = list(before) + [at_mismatch] + after
+        result["mismatch_context_mnemonics"] = tuple(ctx)
+        result["mismatch_context_text"] = " ".join(ctx)
+
     return result
 
 
@@ -332,17 +461,33 @@ def _failure_mode(regr_kind: str, sim: dict) -> str:
     return "unknown"
 
 
-def _build_text_blob(sig: CaseSignature, sim: dict, trace: dict) -> str:
+def _build_text_blob(sig: CaseSignature, sim: dict, trace: dict, regr: dict) -> str:
     if sig.failure_mode == "mismatch":
         parts = ["MODE_mismatch", "MODE_mismatch", f"LEN_{sig.trace_length_bucket}"]
-        if sig.trace_loop_mnems:
-            parts.extend([f"LOOP_{m}" for m in sig.trace_loop_mnems])
+        if sig.mismatch_ibex_mnemonic:
+            parts.extend([f"IBEX_{sig.mismatch_ibex_mnemonic}"] * 3)
+        if sig.mismatch_spike_mnemonic:
+            parts.extend([f"SPIKE_{sig.mismatch_spike_mnemonic}"] * 3)
+        pair = f"{sig.mismatch_ibex_mnemonic}_{sig.mismatch_spike_mnemonic}"
+        if sig.mismatch_ibex_mnemonic and sig.mismatch_spike_mnemonic:
+            parts.extend([f"PAIR_{pair}"] * 3)
+        if sig.mismatch_retire_index:
+            bucket = min(sig.mismatch_retire_index // 100, 999)
+            parts.append(f"RETIRE_{bucket}")
+        if sig.early_mismatch:
+            parts.extend(["EARLY_MISMATCH"] * 4)
+        if sig.same_reg_pair:
+            parts.extend(["SAME_REG_PAIR"] * 4)
+        if not sig.has_signature_loop:
+            parts.extend(["NO_SIG_LOOP"] * 2)
+        if trace.get("mismatch_context_text"):
+            parts.extend([f"CTX {trace['mismatch_context_text']}"] * 2)
+        if sig.has_signature_loop:
+            parts.extend(["SIG_LOOP"] * 3)
         if sig.has_repeating_tail:
-            parts.extend(["REPEAT_TAIL"] * 3)
+            parts.extend(["REPEAT_TAIL"] * 2)
         if sig.tail_mnem_uniformity >= 0.75:
             parts.append(f"UNIFORM_{sig.tail_mnem_uniformity:.2f}")
-        if trace["tail_text"]:
-            parts.append("TAIL " + trace["tail_text"])
         return " ".join(parts)
 
     parts = [f"MODE_{sig.failure_mode}", f"REGR_{sig.regr_kind}"]
@@ -372,14 +517,28 @@ def build_case_features(
     trace_path = _resolve(base_dir, trace_rel)
 
     regr_kind = detect_regr_kind(regr_path)
-    trace = extract_trace(trace_path)
 
     if regr_kind == "mismatch":
         regr = extract_regr(regr_path, kind="mismatch")
         sim = _empty_sim()
+        trace = extract_trace(
+            trace_path,
+            mismatch_retire_index=regr["retire_index"],
+        )
     else:
         regr = extract_regr(regr_path, kind=regr_kind)
         sim = extract_sim(_resolve(base_dir, sim_rel))
+        trace = _empty_trace()
+
+    matched_count = int(regr.get("matched_count", 0))
+    retire_index = int(regr.get("retire_index", 0))
+    ibex_mnem = regr.get("ibex_mnemonic", "")
+    spike_mnem = regr.get("spike_mnemonic", "")
+    early_mismatch = (
+        regr["kind"] == "mismatch"
+        and (matched_count < 200 or (0 < retire_index < 150))
+    )
+    same_reg_pair = bool(ibex_mnem) and ibex_mnem == spike_mnem
 
     sig = CaseSignature(
         failure_mode=_failure_mode(regr["kind"], sim),
@@ -395,11 +554,19 @@ def build_case_features(
         tail_mnem_uniformity=trace["tail_uniformity"],
         has_repeating_tail=trace["has_repeating_tail"],
         trace_total=trace["total"],
+        has_signature_loop=trace.get("has_signature_loop", False),
+        mismatch_retire_index=retire_index,
+        mismatch_ibex_mnemonic=ibex_mnem,
+        mismatch_spike_mnemonic=spike_mnem,
+        mismatch_context_mnemonics=trace.get("mismatch_context_mnemonics", ()),
+        mismatch_matched_count=matched_count,
+        early_mismatch=early_mismatch,
+        same_reg_pair=same_reg_pair,
     )
     return CaseFeatures(
         case_id=case_id,
         signature=sig,
-        text_blob=_build_text_blob(sig, sim, trace),
+        text_blob=_build_text_blob(sig, sim, trace, regr),
     )
 
 

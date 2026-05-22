@@ -28,10 +28,15 @@ input.csv ──► features.py ──► clustering.py ──► output.csv
 
 `src/features.py`
 :  Mode-aware feature routing:
-   - **`regr.log` mismatch** → features from `trace.log` only (loop mnemonics,
-     tail uniformity, length bucket, repeating-tail flag).
+   - **`regr.log` mismatch** → features from `trace.log` plus the first mismatch
+     block in `regr.log` (retire index, ibex/spike mnemonics, matched count) and
+     a ±8-instruction trace context window at the mismatch retire index.
    - **otherwise** → features from `sim.log` + `regr.log` (canonical fatal kind,
      assertion set, fatal source file, failing test name).
+
+   Mismatch-specific signals include signature-loop detection (auipc/sw/c.j),
+   early-mismatch flag (low matched count or retire index), same-register pair
+   (ibex mnemonic equals spike), tail length bucket, and tail uniformity.
 
 `src/clustering.py`
 :  Strategies:
@@ -39,7 +44,9 @@ input.csv ──► features.py ──► clustering.py ──► output.csv
    - `tfidf` — TF-IDF + agglomerative (cosine).
    - `hybrid` *(default)* — mode-specific pairwise distance (trace-only for
      mismatch; assert/fatal-aware for others) blended with TF-IDF cosine;
-     identical signatures are must-linked (distance 0).
+     identical signatures are must-linked (distance 0). Mismatch outliers
+     (short trace, no signature loop, same-reg pair) are pushed away from the
+     core mismatch cluster; `no_dret` fatals soft-link to early short mismatches.
 
 `src/regr_fail_bucketing.py`
 :  CLI entry point; parallel feature extraction via `--workers` (default: auto).
@@ -87,14 +94,18 @@ python3 eval.py \
 
 ### Scores on the public samples (`hybrid`)
 
-| Benchmark | N  | K | Balanced Accuracy |
-|-----------|----|---|-------------------|
-| Set 1     | 9  | 2 | 0.475             |
-| Set 2     | 27 | 4 | **0.944**         |
+| Benchmark | N  | K | Balanced Accuracy | Notes |
+|-----------|----|---|-------------------|-------|
+| Set 1     | 9  | 2 | 0.475             | Cases 5 & 9 share identical sim/regr templates across bugs |
+| Set 2     | 27 | 4 | **0.959**         | bug_107/2014/7021 perfect; bug_234 case 22 fixed; case 23 merges with 107 |
 
 Set 1 is limited by cases that share identical UVM timeout templates, test
-names, and trace tails across different bugs (e.g. bug_304 case 5 vs bug_7023
-case 9) — they are unidentifiable from the logs alone.
+names, and bins across different bugs (e.g. bug_304 case 5 vs bug_7023 case 9).
+
+Set 2 case 23 (bug_234) is trace-indistinguishable from bug_107 mismatches
+(same signature-loop tail, similar retire/matched counts); case 22 is correctly
+separated via early short-trace outlier detection and linked to the `no_dret`
+fatal case 21.
 
 ## LLM (optional)
 
