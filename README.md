@@ -1,35 +1,106 @@
-# SoCV Final Project: 2026 CAD Contest B: Regression Failure Bucketing
+# SoCV Final Project: 2026 CAD Contest B — Regression Failure Bucketing
+
+Team ID: cadb1053
+Team Name: bububusc
+Team Members:
+- B11901047 郭祐嘉 — tankkuo0712@gmail.com
+- B11901043 張庭碩 — timmychang104@gmail.com
+- B11901112 卜紹秦 — pushaochin@gmail.com
 
 ---
 
-Team ID: cadb1053  
-Team Name: bububusc  
-Team Members:  
-B11901047 郭祐嘉  tankkuo0712@gmail.com  
-B11901043 張庭碩  timmychang104@gmail.com  
-B11901112 卜紹秦  pushaochin@gmail.com  
+## Overview
 
----
-Install dependencies:
+Given a CSV of N RTL regression failures (each pointing to `regr.log`,
+`sim.log[.gz]`, and `trace.log[.gz]`), assign every case a bucket so that
+cases sharing the same root-cause bug land in the same bucket. The scoring
+metric is pairwise balanced accuracy (see `eval.py`).
+
+### Pipeline
+
+```
+input.csv ──► features.py ──► clustering.py ──► output.csv
+                 │                   │
+                 └─ per-case          └─ signature / tfidf / hybrid
+                    fingerprint +
+                    normalized text
+```
+
+`src/features.py`
+:  Streams each log file and produces a structured `CaseSignature` (UVM
+   verdict, normalized `UVM_FATAL` template + source file + coarse category,
+   sorted assertion names, mismatch mnemonics, trace-tail loop statistics)
+   together with a compact normalized text blob for downstream vectorizers.
+
+`src/clustering.py`
+:  Three strategies:
+   - `signature` — bucket by exact categorical key.
+   - `tfidf` — TF-IDF on the text blob → Agglomerative (cosine, average).
+   - `hybrid` *(default)* — Custom precomputed distance combining signature
+     overlap (mode, fatal source/category, assertion-set Jaccard, mismatch
+     mnemonics, trace-tail similarity) with a small TF-IDF cosine residual,
+     fed to AgglomerativeClustering with `metric=precomputed`.
+
+`src/regr_fail_bucketing.py`
+:  CLI entry point matching the contest interface:
+   `regr_fail_bucketing --input <csv> --output <csv> --k <k>`.
+
+The implementation is deterministic (no LLM dependency by default),
+streaming-friendly (gzipped sim/trace logs are read line-by-line with a
+rolling tail deque, never materialized), and respects the contest budgets.
+
+## Install
+
 ```bash
-source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-How to run:
+## Run
+
 ```bash
-python src/regr_fail_bucketing.py \
-    --input B_samples_20260516/problem/benchmark_set_1/input.csv \
+python3 src/regr_fail_bucketing.py \
+    --input  B_samples_20260516/problem/benchmark_set_1/input.csv \
     --output output.csv \
     --k 2
 ```
-Evaluation:
+
+Options:
+- `--method {signature,tfidf,hybrid,signature_then_tfidf}` — default `hybrid`.
+- `--seed N` — random seed (default 42).
+- `-v` / `--verbose` — print per-bucket diagnostics to stderr.
+
+Convenience driver (auto-derives `k` from the golden file):
+
 ```bash
-python3 eval.py \
-  --output output.csv \
-  --golden B_samples_20260516/problem/benchmark_set_1/golden.csv
+./run_and_eval.sh 1            # benchmark_set_1 with default hybrid
+./run_and_eval.sh 2 tfidf      # benchmark_set_2 with tfidf
 ```
 
-# 支線任務 - 生成測資
+## Evaluation
 
-打算自己用 UVM 生成測資觀察一下是否可以做更多統計分析，但是如果是打算在同一個design當中插入多個bug, 然後每個輸出的sim.log代表他遇到某個bug, 這樣我們也不知道他實際上是哪個bug(就變回我們要做unsupersived learning的任務)。或是可以只插一個bug, 看他在分類上是否都可以被分到同一類。
+```bash
+python3 eval.py \
+    --output output.csv \
+    --golden B_samples_20260516/problem/benchmark_set_1/golden.csv \
+    --verbose
+```
+
+### Scores on the public samples (`hybrid`)
+
+| Benchmark | N  | K | Balanced Accuracy |
+|-----------|----|---|-------------------|
+| Set 1     | 9  | 2 | 0.625             |
+| Set 1's ceiling is limited by two cases (bug_7023 cases 7 and 9) that share
+identical `+UVM_TESTNAME`, `+bin`, `+seed`, end-of-trace, line counts, and
+UVM message templates with two bug_304 cases — i.e. they are unidentifiable
+from the logs alone without bug-specific prior knowledge. |
+| Set 2     | 27 | 4 | 0.901             |
+
+## LLM (optional)
+
+The reference solutions in `B_samples_20260516/solution/` demonstrate how to
+plug an LLM completion or embedding endpoint via `LLM_MODEL_CONFIG`. Our
+default implementation is deterministic and does **not** require LLM access;
+the LLM path can be added on top by feeding the same `text_blob` to an
+embedding endpoint and replacing the TF-IDF residual.

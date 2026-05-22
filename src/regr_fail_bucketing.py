@@ -1,171 +1,162 @@
 #!/usr/bin/env python3
+"""Entry point for regression-failure bucketing.
 
+Usage:
+    python src/regr_fail_bucketing.py \
+        --input  B_samples_20260516/problem/benchmark_set_1/input.csv \
+        --output output.csv \
+        --k 2
+
+The program reads an input CSV describing N failure cases (each with three log
+file paths), extracts features per case, and writes an output CSV with the
+columns ``Case,bucket``.  Bucket IDs are arbitrary strings and only their
+groupings are scored (pairwise balanced accuracy; see ``eval.py``).
 """
-Regression Failure Bucketing - Improved Implementation
-Hierarchical clustering by error_type + multi-view features with weighted priorities
-"""
+
+from __future__ import annotations
 
 import argparse
 import os
 import random
 import sys
+import time
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
-from log_parser import (
-    RegrLogParser, SimLogParser, TraceLogParser, 
-    classify_error_type
-)
-from feature_extractor import WeightedMultiViewFeatureExtractor
-from clustering import HierarchicalClustering
+# Allow `python src/regr_fail_bucketing.py` from the repo root and
+# `regr_fail_bucketing` from a PyInstaller bundle alike.
+_HERE = Path(__file__).resolve().parent
+if str(_HERE) not in sys.path:
+    sys.path.insert(0, str(_HERE))
+
+from clustering import cluster, summarize  # noqa: E402
+from features import build_case_features  # noqa: E402
 
 
-def set_seed(seed: int = 42):
-    """Set all random seeds"""
+def _seed_all(seed: int = 42) -> None:
     random.seed(seed)
     os.environ["PYTHONHASHSEED"] = str(seed)
     np.random.seed(seed)
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Regression Failure Bucketing - Improved Hierarchical Approach"
-    )
-    parser.add_argument("--input", required=True, help="Input CSV with log file paths")
-    parser.add_argument("--output", required=True, help="Output CSV with bucket assignments")
-    parser.add_argument("--k", type=int, required=True, help="Number of clusters (soft hint)")
-    parser.add_argument("--verbose", action="store_true", help="Verbose output")
-    args = parser.parse_args()
-    
-    set_seed(42)
-    
-    if args.verbose:
-        print("[*] Starting Regression Failure Bucketing (Improved)...")
-    
-    # Stage 0: Load input CSV
-    try:
-        df_input = pd.read_csv(args.input)
-        if args.verbose:
-            print(f"[*] Loaded {len(df_input)} cases")
-    except Exception as e:
-        print(f"[!] Failed to load input CSV: {e}", file=sys.stderr)
-        sys.exit(1)
-    
-    # Prepare cases list
-    cases = []
-    base_dir = os.path.dirname(args.input)
-    for _, row in df_input.iterrows():
-        case = {
-            "Case": row["Case"],
-            "Regr Log": os.path.join(base_dir, row["Regr Log"]),
-            "Sim Log": os.path.join(base_dir, row["Sim Log"]),
-            "Trace Log": os.path.join(base_dir, row["Trace Log"])
-        }
-        cases.append(case)
-    
-    # Stage 1: Log parsing and error classification
-    if args.verbose:
-        print("[*] Stage 1: Log parsing and error type classification...")
-    
-    regr_parser = RegrLogParser()
-    sim_parser = SimLogParser()
-    trace_parser = TraceLogParser()
-    
-    parsed_results = []
-    error_type_dist = {}
-    
-    try:
-        for case in cases:
-            regr_parsed = regr_parser.parse(case["Regr Log"])
-            sim_parsed = sim_parser.parse(case["Sim Log"])
-            trace_parsed = trace_parser.parse(case["Trace Log"])
-            
-            error_type = classify_error_type(regr_parsed, sim_parsed, trace_parsed)
-            error_type_dist[error_type] = error_type_dist.get(error_type, 0) + 1
-            
-            parsed_results.append({
-                "regr": regr_parsed,
-                "sim": sim_parsed,
-                "trace": trace_parsed,
-                "error_type": error_type
-            })
-        
-        if args.verbose:
-            print("[*] Error type distribution:")
-            for etype, count in sorted(error_type_dist.items()):
-                print(f"    - {etype}: {count}")
-    
-    except Exception as e:
-        print(f"[!] Parsing failed: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-    
-    # Stage 2: Weighted multi-view feature extraction
-    if args.verbose:
-        print("[*] Stage 2: Weighted multi-view feature extraction...")
-    
-    feature_extractor = WeightedMultiViewFeatureExtractor(
-        regr_tfidf_dim=128,
-        sim_ngram_dim=64,
-        trace_instr_pool_size=20
-    )
-    
-    try:
-        features = feature_extractor.extract_features_batch(cases, parsed_results)
-        feature_dim = feature_extractor.get_feature_dimension()
-        if args.verbose:
-            print(f"[*] Feature dimension: {feature_dim}")
-            print(f"[*] Feature matrix shape: {features.shape}")
-    except Exception as e:
-        print(f"[!] Feature extraction failed: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-    
-    # Stage 3: Hierarchical clustering by error type
-    if args.verbose:
-        print("[*] Stage 3: Hierarchical clustering...")
-    
-    clusterer = HierarchicalClustering(linkage="ward", seed=42)
-    
-    try:
-        labels = clusterer.cluster_hierarchical(
-            features, 
-            parsed_results,
-            n_clusters=args.k,
-            verbose=args.verbose
+def _read_input(path: str) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    required = {"Case", "Regr Log", "Sim Log", "Trace Log"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(
+            f"{path}: missing required columns: {sorted(missing)} "
+            f"(found {list(df.columns)})"
         )
-        
-        if args.verbose:
-            unique_labels = len(set(labels))
-            print(f"[*] Clustering complete: {unique_labels} clusters")
-    except Exception as e:
-        print(f"[!] Clustering failed: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-    
-    # Stage 4: Output results
+    return df
+
+
+def _bucket_string(label: int) -> str:
+    """Format bucket IDs as `bucket_<i>` strings.  Evaluation is invariant to
+    the actual string, but human-readable labels help debugging."""
+    return f"bucket_{label}"
+
+
+def run(args: argparse.Namespace) -> int:
+    _seed_all(args.seed)
+
+    t0 = time.time()
+    df_input = _read_input(args.input)
+    base_dir = os.path.dirname(os.path.abspath(args.input))
+
     if args.verbose:
-        print("[*] Stage 4: Writing output...")
-    
-    df_output = pd.DataFrame({
-        "Case": [case["Case"] for case in cases],
-        "bucket": labels
-    })
-    
-    try:
-        df_output.to_csv(args.output, index=False)
-        if args.verbose:
-            print(f"[+] Results written to: {args.output}")
-    except Exception as e:
-        print(f"[!] Failed to write output: {e}", file=sys.stderr)
-        sys.exit(1)
-    
+        print(
+            f"[bucketing] {len(df_input)} cases, k={args.k}, "
+            f"method={args.method}",
+            file=sys.stderr,
+        )
+
+    features = []
+    for _, row in df_input.iterrows():
+        f = build_case_features(
+            case_id=int(row["Case"]),
+            base_dir=base_dir,
+            regr_rel=str(row["Regr Log"]),
+            sim_rel=str(row["Sim Log"]),
+            trace_rel=str(row["Trace Log"]),
+        )
+        features.append(f)
+
     if args.verbose:
-        print("[+] Done!")
+        n_distinct = len({f.signature.categorical_key() for f in features})
+        print(
+            f"[bucketing] extracted features in {time.time()-t0:.2f}s; "
+            f"{n_distinct} distinct signatures",
+            file=sys.stderr,
+        )
+
+    labels = cluster(features, k=args.k, method=args.method)
+
+    df_output = pd.DataFrame(
+        {
+            "Case": [f.case_id for f in features],
+            "bucket": [_bucket_string(l) for l in labels],
+        }
+    )
+    df_output.to_csv(args.output, index=False)
+
+    if args.verbose:
+        n_buckets = len(set(labels))
+        print(
+            f"[bucketing] wrote {len(df_output)} rows in "
+            f"{n_buckets} bucket(s) -> {args.output} "
+            f"(total {time.time()-t0:.2f}s)",
+            file=sys.stderr,
+        )
+        print(summarize(features, labels), file=sys.stderr)
+
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        prog="regr_fail_bucketing",
+        description="Cluster RTL regression failure logs into per-bug buckets.",
+    )
+    parser.add_argument(
+        "--input",
+        required=True,
+        help="Input CSV with columns: Case, Regr Log, Sim Log, Trace Log",
+    )
+    parser.add_argument(
+        "--output",
+        required=True,
+        help="Output CSV with columns: Case, bucket",
+    )
+    parser.add_argument(
+        "--k",
+        type=int,
+        required=True,
+        help="Soft hint for the number of buckets (= injected bugs)",
+    )
+    parser.add_argument(
+        "--method",
+        default="hybrid",
+        choices=("signature", "tfidf", "hybrid", "signature_then_tfidf"),
+        help="Clustering strategy (default: hybrid)",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=42,
+        help="Random seed for reproducibility (default: 42)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print progress and a per-bucket summary to stderr",
+    )
+    args = parser.parse_args(argv)
+    return run(args)
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
