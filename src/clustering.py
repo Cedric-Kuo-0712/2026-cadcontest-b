@@ -1,29 +1,4 @@
-"""Clustering strategies built on top of :mod:`features`.
-
-Four strategies are exposed:
-
-``signature``
-    Group cases by their exact categorical key.  Fast and very precise when
-    the bug signatures are clean (typical for the public benchmarks).
-
-``tfidf``
-    Vectorize each case's normalized text blob with TF-IDF and run
-    AgglomerativeClustering with cosine distance / average linkage targeting
-    exactly ``k`` clusters.
-
-``hybrid``  (default)
-    Build a custom per-pair distance combining categorical signature overlap
-    (fatal template, assertion set Jaccard, mismatch flag, verdict, mismatch
-    mnemonics) with a TF-IDF cosine residual.  Run AgglomerativeClustering
-    with precomputed distances and ``average`` linkage targeting ``k``
-    clusters.  Identical-signature cases get distance 0 (effectively
-    must-link).
-
-``signature_then_tfidf``
-    Run ``signature`` first.  If the number of distinct signatures is greater
-    than ``k`` (we over-segmented), merge signature groups using TF-IDF
-    centroid distance until we hit ``k``.  Otherwise keep them as-is.
-"""
+"""Clustering strategies for regression-failure bucketing."""
 
 from __future__ import annotations
 
@@ -35,12 +10,7 @@ import numpy as np
 from features import CaseFeatures, CaseSignature
 
 
-# ---------------------------------------------------------------------------
-# Signature strategy
-# ---------------------------------------------------------------------------
-
 def cluster_by_signature(features: Sequence[CaseFeatures]) -> list[int]:
-    """Assign one bucket id per distinct categorical signature."""
     bucket_of_key: dict[tuple, int] = {}
     labels = []
     for f in features:
@@ -51,15 +21,12 @@ def cluster_by_signature(features: Sequence[CaseFeatures]) -> list[int]:
     return labels
 
 
-# ---------------------------------------------------------------------------
-# TF-IDF strategy
-# ---------------------------------------------------------------------------
-
 def _tfidf_matrix(features: Sequence[CaseFeatures]):
-    """Build a TF-IDF matrix from the per-case text blobs."""
     from sklearn.feature_extraction.text import TfidfVectorizer
 
-    corpus = [f.text_blob if f.text_blob else f"empty_case_{f.case_id}" for f in features]
+    corpus = [
+        f.text_blob if f.text_blob else f"empty_case_{f.case_id}" for f in features
+    ]
     vec = TfidfVectorizer(
         lowercase=True,
         ngram_range=(1, 2),
@@ -68,49 +35,23 @@ def _tfidf_matrix(features: Sequence[CaseFeatures]):
         sublinear_tf=True,
         token_pattern=r"[A-Za-z_][A-Za-z0-9_<>]+",
     )
-    matrix = vec.fit_transform(corpus)
-    return matrix
+    return vec.fit_transform(corpus)
 
 
 def cluster_by_tfidf(features: Sequence[CaseFeatures], k: int) -> list[int]:
-    """Cluster cases via TF-IDF + agglomerative clustering."""
     from sklearn.cluster import AgglomerativeClustering
 
     n = len(features)
     if n <= 1:
         return [0] * n
     k_eff = max(1, min(k, n))
-    matrix = _tfidf_matrix(features)
-    dense = matrix.toarray()
+    dense = _tfidf_matrix(features).toarray()
     if k_eff == 1:
         return [0] * n
     agg = AgglomerativeClustering(
-        n_clusters=k_eff,
-        metric="cosine",
-        linkage="average",
+        n_clusters=k_eff, metric="cosine", linkage="average"
     )
-    labels = agg.fit_predict(dense)
-    return labels.tolist()
-
-
-# ---------------------------------------------------------------------------
-# Hybrid strategy: signature-aware pairwise distance + agglomerative
-# ---------------------------------------------------------------------------
-
-def _centroid(rows: np.ndarray) -> np.ndarray:
-    centroid = rows.mean(axis=0)
-    norm = np.linalg.norm(centroid)
-    if norm > 0:
-        centroid = centroid / norm
-    return centroid
-
-
-def _cosine(a: np.ndarray, b: np.ndarray) -> float:
-    na = np.linalg.norm(a)
-    nb = np.linalg.norm(b)
-    if na == 0 or nb == 0:
-        return 1.0
-    return float(1.0 - np.dot(a, b) / (na * nb))
+    return agg.fit_predict(dense).tolist()
 
 
 def _jaccard(a: tuple, b: tuple) -> float:
@@ -118,156 +59,144 @@ def _jaccard(a: tuple, b: tuple) -> float:
     if not sa and not sb:
         return 1.0
     union = sa | sb
-    if not union:
+    return len(sa & sb) / len(union) if union else 1.0
+
+
+def _tuple_overlap(a: tuple, b: tuple) -> float:
+    if not a and not b:
         return 1.0
-    return len(sa & sb) / len(union)
+    if a == b:
+        return 1.0
+    common = sum(1 for x, y in zip(a, b) if x == y)
+    return common / max(len(a), len(b), 1)
 
 
-def _pairwise_signature_distance(
-    sa: CaseSignature, sb: CaseSignature
-) -> float:
-    """A handcrafted, bounded distance in [0, 1] between two case signatures.
+def _fatal_kind_distance(ka: str, kb: str) -> float:
+    if not ka and not kb:
+        return 0.0
+    if ka == kb:
+        return 0.0
+    # Same timeout family from the same checker file often means same bug.
+    timeout_kinds = {"debug_timeout", "irq_timeout"}
+    if ka in timeout_kinds and kb in timeout_kinds:
+        return 0.45
+    check_kinds = {"check_signature", "check_memory", "check_mcause"}
+    if ka in check_kinds and kb in check_kinds:
+        return 0.35
+    if ka in timeout_kinds and kb in check_kinds:
+        return 0.55
+    if ka in check_kinds and kb in timeout_kinds:
+        return 0.55
+    return 1.0
 
-    Lower means "more likely to share a bug".  The score combines several
-    independent observations and is calibrated so that:
 
-    * Identical fingerprints score 0.
-    * Cases differing only on noisy fields (test name, mismatch mnemonic)
-      stay in the 0.1-0.4 range.
-    * Cases with completely disjoint failure modes (mismatch vs assertion vs
-      timeout) get distance close to 1.
-    """
-    # Failure-mode signal: assertion vs fatal-timeout vs mismatch vs pass.
-    def mode(s: CaseSignature) -> str:
-        if s.sim_error_asserts:
-            return "assert"
-        if s.regr_kind == "mismatch":
-            return "mismatch"
-        if s.sim_fatal_template:
-            return "fatal"
-        if s.sim_verdict == "passed":
-            return "passed"
-        return "other"
+def _mismatch_distance(sa: CaseSignature, sb: CaseSignature) -> float:
+    len_dist = 0.0 if sa.trace_length_bucket == sb.trace_length_bucket else 0.6
+    if sa.trace_length_bucket == "short" or sb.trace_length_bucket == "short":
+        if sa.trace_length_bucket != sb.trace_length_bucket:
+            len_dist = 0.85
 
-    ma, mb = mode(sa), mode(sb)
-    mode_dist = 0.0 if ma == mb else 1.0
+    loop_dist = 1.0 - _jaccard(sa.trace_loop_mnems, sb.trace_loop_mnems)
+    repeat_dist = 0.0 if sa.has_repeating_tail == sb.has_repeating_tail else 0.35
+    uniform_dist = abs(sa.tail_mnem_uniformity - sb.tail_mnem_uniformity)
+    tail_dist = 1.0 - _tuple_overlap(sa.trace_tail_mnemonics, sb.trace_tail_mnemonics)
 
-    # Assertion-set Jaccard (1.0 means identical, 0 means no overlap)
-    if sa.sim_error_asserts or sb.sim_error_asserts:
-        assert_sim = _jaccard(sa.sim_error_asserts, sb.sim_error_asserts)
+    # High tail uniformity with a single mnemonic (e.g. all ``sw``) is a strong
+    # separator for short-run mismatches.
+    mono_a = sa.tail_mnem_uniformity >= 0.9 and len(set(sa.trace_tail_mnemonics)) <= 2
+    mono_b = sb.tail_mnem_uniformity >= 0.9 and len(set(sb.trace_tail_mnemonics)) <= 2
+    mono_dist = 0.0 if mono_a == mono_b else 0.7
+    if mono_a and mono_b and sa.trace_tail_mnemonics != sb.trace_tail_mnemonics:
+        mono_dist = 0.85
+
+    return float(min(
+        1.0,
+        0.30 * len_dist
+        + 0.25 * loop_dist
+        + 0.15 * tail_dist
+        + 0.10 * repeat_dist
+        + 0.10 * uniform_dist
+        + 0.10 * mono_dist,
+    ))
+
+
+def _non_mismatch_distance(sa: CaseSignature, sb: CaseSignature) -> float:
+    assert_sim = _jaccard(sa.sim_error_asserts, sb.sim_error_asserts)
+
+    if sa.failure_mode != sb.failure_mode:
+        # Same bug can surface as UVM_ERROR asserts or UVM_FATAL timeouts.
+        mode_penalty = 0.15 if assert_sim >= 0.5 else 0.45
     else:
-        assert_sim = 1.0  # neither has assertions -> neutral
+        mode_penalty = 0.0
+
+    fatal_dist = _fatal_kind_distance(sa.sim_fatal_kind, sb.sim_fatal_kind)
     assert_dist = 1.0 - assert_sim
 
-    # Fatal template match -- soft-shaded by category + source file so cases
-    # with closely-related-but-not-identical UVM_FATAL messages still align.
-    if sa.sim_fatal_template and sb.sim_fatal_template:
-        if sa.sim_fatal_template == sb.sim_fatal_template:
-            fatal_dist = 0.0
-        elif (sa.sim_fatal_source == sb.sim_fatal_source
-              and sa.sim_fatal_source != ""
-              and sa.sim_fatal_category == sb.sim_fatal_category):
-            # Same source file + same category (e.g. both timeouts from
-            # core_ibex_base_test.sv).  Probably same bug family.
-            fatal_dist = 0.35
-        elif (sa.sim_fatal_category == sb.sim_fatal_category
-              and sa.sim_fatal_category not in ("", "none")):
-            fatal_dist = 0.6
-        else:
-            fatal_dist = 1.0
-    elif not sa.sim_fatal_template and not sb.sim_fatal_template:
-        fatal_dist = 0.0
-    else:
-        fatal_dist = 1.0
-
-    # Verdict
-    verdict_dist = 0.0 if sa.sim_verdict == sb.sim_verdict else 1.0
-
-    # Regr kind
-    regr_dist = 0.0 if sa.regr_kind == sb.regr_kind else 1.0
-
-    # Mnemonic overlap on mismatch line (only meaningful when both mismatch)
-    mnem_dist = 0.5
-    if sa.regr_kind == "mismatch" and sb.regr_kind == "mismatch":
-        ia, sap = sa.regr_mismatch_mnemonics
-        ib, sbp = sb.regr_mismatch_mnemonics
-        ibex_match = (ia == ib) and ia != ""
-        spike_match = (sap == sbp) and sap != ""
-        if ibex_match and spike_match:
-            mnem_dist = 0.0
-        elif ibex_match or spike_match:
-            mnem_dist = 0.3
-        else:
-            mnem_dist = 0.7
-
-    # Tail mnemonic sequence equality (helps tell apart same-fatal cases
-    # whose execution diverged earlier).
-    tail_dist = 0.5
-    if sa.trace_tail_mnemonics and sb.trace_tail_mnemonics:
-        if sa.trace_tail_mnemonics == sb.trace_tail_mnemonics:
-            tail_dist = 0.0
-        else:
-            common = sum(
-                1 for x, y in zip(sa.trace_tail_mnemonics, sb.trace_tail_mnemonics)
-                if x == y
-            )
-            tail_dist = 1.0 - common / max(
-                len(sa.trace_tail_mnemonics), len(sb.trace_tail_mnemonics)
-            )
-
-    # Weighted combination.  Assertion / fatal / mode dominate; tail and
-    # mnemonics provide a finer-grained tie-breaker.
-    weights = {
-        "mode": 0.35,
-        "fatal": 0.20,
-        "assert": 0.20,
-        "regr": 0.10,
-        "verdict": 0.05,
-        "mnem": 0.05,
-        "tail": 0.05,
-    }
-    score = (
-        weights["mode"] * mode_dist
-        + weights["fatal"] * fatal_dist
-        + weights["assert"] * assert_dist
-        + weights["regr"] * regr_dist
-        + weights["verdict"] * verdict_dist
-        + weights["mnem"] * mnem_dist
-        + weights["tail"] * tail_dist
+    src_dist = (
+        0.0
+        if sa.sim_fatal_source and sa.sim_fatal_source == sb.sim_fatal_source
+        else 0.35
     )
-    return float(min(1.0, max(0.0, score)))
+    test_dist = (
+        0.0
+        if sa.regr_test_name and sa.regr_test_name == sb.regr_test_name
+        else 0.35
+    )
+
+    # Shared assertion names are the strongest same-bug signal for X-prop bugs.
+    if assert_sim == 1.0 and sa.sim_error_asserts:
+        return float(min(1.0, 0.20 * fatal_dist + 0.10 * mode_penalty))
+
+    return float(min(
+        1.0,
+        mode_penalty
+        + 0.30 * fatal_dist
+        + 0.30 * assert_dist
+        + 0.10 * src_dist
+        + 0.05 * test_dist,
+    ))
+
+
+def _pairwise_signature_distance(sa: CaseSignature, sb: CaseSignature) -> float:
+    if sa.failure_mode == "mismatch" and sb.failure_mode == "mismatch":
+        return _mismatch_distance(sa, sb)
+    if sa.failure_mode == "mismatch" or sb.failure_mode == "mismatch":
+        return 1.0
+    return _non_mismatch_distance(sa, sb)
 
 
 def _build_distance_matrix(features: Sequence[CaseFeatures]) -> np.ndarray:
-    """Combine signature distance with a small TF-IDF residual."""
     n = len(features)
     D = np.zeros((n, n), dtype=float)
     sigs = [f.signature for f in features]
-    # Categorical signature contribution.
+    keys = [f.signature.categorical_key() for f in features]
     for i in range(n):
         for j in range(i + 1, n):
-            D[i, j] = _pairwise_signature_distance(sigs[i], sigs[j])
+            if keys[i] == keys[j]:
+                D[i, j] = 0.0
+            else:
+                D[i, j] = _pairwise_signature_distance(sigs[i], sigs[j])
             D[j, i] = D[i, j]
-    # TF-IDF residual: small weight, but helps within groups that look
-    # otherwise identical.
+
     try:
         tfidf = _tfidf_matrix(features).toarray()
-        # Cosine distance between rows.
         norms = np.linalg.norm(tfidf, axis=1)
         norms_safe = np.where(norms > 0, norms, 1.0)
         normed = tfidf / norms_safe[:, None]
-        cos_sim = normed @ normed.T
-        cos_dist = np.clip(1.0 - cos_sim, 0.0, 1.0)
-        D = 0.85 * D + 0.15 * cos_dist
+        cos_dist = np.clip(1.0 - normed @ normed.T, 0.0, 1.0)
+        D = 0.70 * D + 0.30 * cos_dist
+        # Preserve must-link pairs after TF-IDF blend.
+        for i in range(n):
+            for j in range(i + 1, n):
+                if keys[i] == keys[j]:
+                    D[i, j] = D[j, i] = 0.0
     except Exception:
         pass
-    # Force diagonal to 0.
     np.fill_diagonal(D, 0.0)
     return D
 
 
 def cluster_hybrid(features: Sequence[CaseFeatures], k: int) -> list[int]:
-    """Signature-aware agglomerative clustering using a precomputed metric."""
     from sklearn.cluster import AgglomerativeClustering
 
     n = len(features)
@@ -285,23 +214,21 @@ def cluster_hybrid(features: Sequence[CaseFeatures], k: int) -> list[int]:
         metric="precomputed",
         linkage="average",
     )
-    labels = agg.fit_predict(D)
-    return labels.tolist()
+    return agg.fit_predict(D).tolist()
 
 
-# ---------------------------------------------------------------------------
-# Signature-then-TF-IDF merge strategy (kept for ablation / fallback)
-# ---------------------------------------------------------------------------
+def _centroid(rows: np.ndarray) -> np.ndarray:
+    c = rows.mean(axis=0)
+    n = np.linalg.norm(c)
+    return c / n if n > 0 else c
+
 
 def cluster_signature_then_tfidf(
     features: Sequence[CaseFeatures], k: int
 ) -> list[int]:
-    """Group by signature, then merge groups via TF-IDF centroid distance."""
     n = len(features)
-    if n == 0:
-        return []
-    if n == 1:
-        return [0]
+    if n <= 1:
+        return [0] * max(n, 1)
 
     sig_labels = cluster_by_signature(features)
     n_sigs = len(set(sig_labels))
@@ -327,33 +254,27 @@ def cluster_signature_then_tfidf(
         best = None
         for i, gi in enumerate(active):
             for gj in active[i + 1:]:
-                d = _cosine(centroids[gi], centroids[gj])
+                d = 1.0 - float(np.dot(centroids[gi], centroids[gj]))
                 if best is None or d < best[0]:
                     best = (d, gi, gj)
         if best is None:
             break
         _, gi, gj = best
-        merged_rows = matrix[groups[gi] + groups[gj]]
         groups[gi] = groups[gi] + groups[gj]
-        centroids[gi] = _centroid(merged_rows)
-        del groups[gj]
-        del centroids[gj]
+        centroids[gi] = _centroid(matrix[groups[gi]])
+        del groups[gj], centroids[gj]
         parent[gj] = gi
         active.remove(gj)
 
-    new_label_of_root: dict[int, int] = {}
+    remap: dict[int, int] = {}
     out = [0] * n
     for idx, old in enumerate(sig_labels):
         root = find(old)
-        if root not in new_label_of_root:
-            new_label_of_root[root] = len(new_label_of_root)
-        out[idx] = new_label_of_root[root]
+        if root not in remap:
+            remap[root] = len(remap)
+        out[idx] = remap[root]
     return out
 
-
-# ---------------------------------------------------------------------------
-# Dispatcher
-# ---------------------------------------------------------------------------
 
 def cluster(features: Sequence[CaseFeatures], k: int, method: str) -> list[int]:
     method = method.lower()
@@ -369,7 +290,6 @@ def cluster(features: Sequence[CaseFeatures], k: int, method: str) -> list[int]:
 
 
 def summarize(features: Iterable[CaseFeatures], labels: Sequence[int]) -> str:
-    """Human-readable summary for `-v` output."""
     by_label: dict[int, list[CaseFeatures]] = defaultdict(list)
     for f, lbl in zip(features, labels):
         by_label[lbl].append(f)
@@ -379,9 +299,9 @@ def summarize(features: Iterable[CaseFeatures], labels: Sequence[int]) -> str:
         sig = members[0].signature
         lines.append(
             f"bucket {lbl}: {len(members)} case(s) "
-            f"verdict={sig.sim_verdict} fatal=\"{sig.sim_fatal_template[:60]}\" "
-            f"asserts={list(sig.sim_error_asserts)} regr={sig.regr_kind}"
+            f"mode={sig.failure_mode} fatal={sig.sim_fatal_kind or '-'} "
+            f"asserts={list(sig.sim_error_asserts)} regr={sig.regr_kind} "
+            f"trace_len={sig.trace_length_bucket or '-'}"
         )
-        ids = sorted(m.case_id for m in members)
-        lines.append(f"  cases: {ids}")
+        lines.append(f"  cases: {sorted(m.case_id for m in members)}")
     return "\n".join(lines)

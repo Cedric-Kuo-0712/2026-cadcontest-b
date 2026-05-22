@@ -20,6 +20,7 @@ import os
 import random
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
@@ -73,16 +74,23 @@ def run(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
 
-    features = []
-    for _, row in df_input.iterrows():
-        f = build_case_features(
+    rows = df_input.to_dict("records")
+
+    def _extract(row: dict) -> CaseFeatures:
+        return build_case_features(
             case_id=int(row["Case"]),
             base_dir=base_dir,
             regr_rel=str(row["Regr Log"]),
             sim_rel=str(row["Sim Log"]),
             trace_rel=str(row["Trace Log"]),
         )
-        features.append(f)
+
+    workers = min(max(1, args.workers), len(rows) or 1)
+    if workers == 1:
+        features = [_extract(row) for row in rows]
+    else:
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            features = list(pool.map(_extract, rows))
 
     if args.verbose:
         n_distinct = len({f.signature.categorical_key() for f in features})
@@ -149,12 +157,20 @@ def main(argv: list[str] | None = None) -> int:
         help="Random seed for reproducibility (default: 42)",
     )
     parser.add_argument(
+        "--workers",
+        type=int,
+        default=0,
+        help="Parallel feature-extraction threads (0 = auto, 1 = serial)",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
         help="Print progress and a per-bucket summary to stderr",
     )
     args = parser.parse_args(argv)
+    if args.workers <= 0:
+        args.workers = min(8, max(1, (os.cpu_count() or 4)))
     return run(args)
 
 

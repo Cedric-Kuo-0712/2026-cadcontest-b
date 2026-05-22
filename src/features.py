@@ -1,23 +1,12 @@
 """Feature extraction for regression-failure bucketing.
 
-Reads the three log files (`regr.log`, `sim.log[.gz]`, `trace.log[.gz]`) for a
-single case and produces:
+Each case yields a structured :class:`CaseSignature` and a compact text blob
+for TF-IDF / agglomerative clustering.
 
-  * a structured ``CaseSignature`` (categorical fingerprint), used by the
-    signature-based bucketer, and
-  * a compact normalized text blob, used by the TF-IDF / embedding fallback.
-
-Design notes
-------------
-* Trace logs may be up to 100M lines (gzip compressed) per benchmark, spread
-  across many cases.  We never materialize a full trace; instead we stream
-  line-by-line and keep a small rolling tail (``deque``).
-* Sim logs may also be huge but the discriminative content (UVM messages,
-  +plusargs) lives near the start and end.  We stop scanning UVM_INFO once a
-  hard cap is reached.
-* Everything that depends on randomly-changing numbers (timestamps, PCs,
-  register values, paths) is normalized so that identical bugs across
-  different seeds collapse to the same signature.
+Routing policy
+--------------
+* ``regr.log`` with ``Mismatch[N]:``  →  features from ``trace.log`` only.
+* otherwise                           →  features from ``sim.log`` + ``regr.log``.
 """
 
 from __future__ import annotations
@@ -31,18 +20,23 @@ from typing import Iterable
 
 
 # ---------------------------------------------------------------------------
-# File helpers
+# I/O helpers
 # ---------------------------------------------------------------------------
 
 def open_log(path: str):
-    """Open a (possibly gzipped) log file in text mode, tolerating bad bytes."""
     if path.endswith(".gz"):
         return gzip.open(path, "rt", errors="replace")
     return open(path, "r", errors="replace")
 
 
+def _resolve(base_dir: str, rel: str) -> str:
+    if os.path.isabs(rel):
+        return rel
+    return os.path.join(base_dir, rel)
+
+
 # ---------------------------------------------------------------------------
-# Normalization helpers
+# Normalization
 # ---------------------------------------------------------------------------
 
 _HEX_NUMBER = re.compile(r"0x[0-9a-fA-F]+")
@@ -53,165 +47,172 @@ _TIME_TAG = re.compile(r"@\s*\d+")
 
 
 def normalize_message(text: str) -> str:
-    """Collapse numeric/path noise so identical message templates align."""
     out = _PATH.sub("<PATH>", text)
     out = _HEX_NUMBER.sub("<HEX>", out)
     out = _TIME_TAG.sub("@<T>", out)
     out = _DEC_NUMBER.sub("<N>", out)
-    out = _WS.sub(" ", out).strip()
-    return out
+    return _WS.sub(" ", out).strip()
+
+
+def _fatal_tag(text: str) -> str:
+    return re.sub(r"[^A-Za-z]+", "_", text)[:80]
 
 
 # ---------------------------------------------------------------------------
-# Data containers
+# Data model
 # ---------------------------------------------------------------------------
 
 @dataclass
 class CaseSignature:
-    """Categorical fingerprint of a single failure case."""
+    """Categorical fingerprint of one failure case."""
 
-    sim_verdict: str = "unknown"            # passed / failed / unknown
-    sim_fatal_template: str = ""            # normalized first UVM_FATAL body
-    sim_fatal_category: str = ""            # coarse: timeout / check / none
-    sim_fatal_source: str = ""              # source file basename of UVM_FATAL
-    sim_error_asserts: tuple = ()           # sorted distinct assertion names
-    sim_uvm_testname: str = ""              # +UVM_TESTNAME=<...>
-    sim_bin_name: str = ""                  # +bin=<.../riscv_FOO_test_0.bin>
-    regr_kind: str = "unknown"              # mismatch / failed_only / unknown
-    regr_test_name: str = ""                # e.g. riscv_csr_test
-    regr_mismatch_mnemonics: tuple = ()     # (ibex_mnem, spike_mnem)
-    trace_tail_mnemonics: tuple = ()        # last few decoded mnemonics
-    trace_tail_unique_pcs: int = 0
-    trace_tail_total: int = 0
+    failure_mode: str = "unknown"          # mismatch | assert | fatal | unknown
+    regr_kind: str = "unknown"               # mismatch | failed_only | unknown
+
+    # sim / regr (non-mismatch)
+    sim_fatal_kind: str = ""                 # canonical fatal class
+    sim_fatal_source: str = ""               # e.g. core_ibex_base_test.sv
+    sim_error_asserts: tuple[str, ...] = ()
+    regr_test_name: str = ""
+    sim_uvm_testname: str = ""
+
+    # trace (mismatch-primary; optional tie-breaker elsewhere)
+    trace_tail_mnemonics: tuple[str, ...] = ()
+    trace_loop_mnems: tuple[str, ...] = ()   # sorted unique mnems in tail window
+    trace_length_bucket: str = ""            # short | medium | long | huge
+    tail_mnem_uniformity: float = 0.0        # 1.0 = all same mnemonic in tail
     has_repeating_tail: bool = False
+    trace_total: int = 0
 
     def categorical_key(self) -> tuple:
-        """Tuple used to group cases with an identical fingerprint."""
+        if self.failure_mode == "mismatch":
+            return (
+                "mismatch",
+                self.trace_loop_mnems,
+                self.trace_length_bucket,
+                self.has_repeating_tail,
+                round(self.tail_mnem_uniformity, 2),
+                self.trace_tail_mnemonics,
+            )
         return (
-            self.sim_verdict,
-            self.sim_fatal_template,
+            self.failure_mode,
+            self.sim_fatal_kind,
+            self.sim_fatal_source,
             self.sim_error_asserts,
-            self.regr_kind,
-            self.regr_mismatch_mnemonics,
-            self.trace_tail_mnemonics,
-            self.has_repeating_tail,
+            self.regr_test_name,
         )
 
 
 @dataclass
 class CaseFeatures:
-    """Everything extracted for one case."""
-
     case_id: int
     signature: CaseSignature = field(default_factory=CaseSignature)
-    text_blob: str = ""                     # compact normalized text for TF-IDF
+    text_blob: str = ""
 
 
 # ---------------------------------------------------------------------------
-# Per-file extractors
+# Regex library
 # ---------------------------------------------------------------------------
 
+_RE_MISMATCH = re.compile(r"^Mismatch\[\d+\]:")
+_RE_REGR_FAILED = re.compile(r"^([A-Za-z0-9_.]+)\s*:\s*\[FAILED\]")
 _RE_UVM_FATAL = re.compile(r"UVM_FATAL\b.*")
-_RE_FATAL_SOURCE = re.compile(r"UVM_FATAL\s+(\S+?\.sv)\b")
-_RE_FATAL_TIMEOUT = re.compile(
-    r"(Did not receive core_status|No dret detected|timeout period|"
-    r"within \d+ cycle)", re.IGNORECASE
-)
-_RE_FATAL_CHECK = re.compile(r"(Check failed|signature_data|verify mismatch)",
-                              re.IGNORECASE)
 _RE_UVM_ERROR = re.compile(r"UVM_ERROR\b.*")
-_RE_UVM_WARN = re.compile(r"UVM_WARNING\b.*")
+_RE_FATAL_SOURCE = re.compile(r"UVM_FATAL\s+(\S+?\.sv)\b")
 _RE_VERDICT_PASS = re.compile(r"RISC-V UVM TEST PASSED")
 _RE_VERDICT_FAIL = re.compile(r"RISC-V UVM TEST FAILED")
 _RE_ASSERT_NAME = re.compile(r"ASSERT FAILED\] \[[^.\]]*\.([^.\]]+)\]")
-# Pull both bracketed assertion name and the bare property name.
 _RE_ASSERT_PROP = re.compile(r"\] ([A-Za-z_][A-Za-z0-9_]*):")
 _RE_TESTNAME = re.compile(r"\+UVM_TESTNAME=(\S+)")
 _RE_BIN = re.compile(r"\+bin=(\S+)")
 _RE_BIN_NAME = re.compile(r"/([A-Za-z0-9_]+_test)_\d+\.bin")
-_RE_MISMATCH_HEADER = re.compile(r"^Mismatch\[\d+\]:")
-_RE_IBEX_LINE = re.compile(r"^ibex\[\d+\]\s*:.*?\b([a-z][a-z0-9.]*)\b")
-_RE_SPIKE_LINE = re.compile(r"^spike\[\d+\]\s*:.*?\b([a-z][a-z0-9.]*)\b")
-_RE_REGR_FAILED = re.compile(r"^([A-Za-z0-9_.]+)\s*:\s*\[FAILED\]")
-
-# trace.log columns: Time, Cycle, PC, Insn, Decoded, ...
 _RE_TRACE_LINE = re.compile(
     r"^\s*(\d+)\s+(\d+)\s+([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s+(\S+)"
 )
 
+_FATAL_KIND_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("debug_timeout", re.compile(r"IN_DEBUG_MODE", re.I)),
+    ("irq_timeout", re.compile(r"HANDLING_IRQ", re.I)),
+    ("no_dret", re.compile(r"No dret detected", re.I)),
+    ("check_mcause", re.compile(r"Check failed mcause", re.I)),
+    ("check_signature", re.compile(r"Check failed signature_data", re.I)),
+    ("check_memory", re.compile(r"memory fault", re.I)),
+)
 
-# Some limits to keep runtime bounded on huge logs.
-_SIM_MAX_BYTES = 50 * 1024 * 1024          # 50 MB read cap per sim.log
-_TRACE_TAIL = 64                            # rolling tail window
-_SIM_FIRST_FATAL_CAP = 5                    # collect at most this many fatal lines
+_SIM_MAX_BYTES = 50 * 1024 * 1024
+_TRACE_TAIL = 64
 
 
-def extract_regr(path: str) -> dict:
-    """Parse a regr.log snippet."""
-    result = {
-        "kind": "unknown",
-        "test_name": "",
-        "mnemonics": ("", ""),
-        "text": "",
-    }
+# ---------------------------------------------------------------------------
+# Lightweight regr routing
+# ---------------------------------------------------------------------------
+
+def detect_regr_kind(path: str) -> str:
+    try:
+        with open_log(path) as f:
+            for line in f:
+                if _RE_MISMATCH.match(line):
+                    return "mismatch"
+                if _RE_REGR_FAILED.match(line.strip()):
+                    return "failed_only"
+    except OSError:
+        pass
+    return "unknown"
+
+
+def extract_regr(path: str, *, kind: str | None = None) -> dict:
+    result = {"kind": kind or "unknown", "test_name": ""}
+    if result["kind"] == "mismatch":
+        return result
     try:
         with open_log(path) as f:
             data = f.read()
     except OSError:
         return result
-
-    result["text"] = normalize_message(data[:4000])
-
-    lines = data.splitlines()
-    if not lines:
-        return result
-
-    if any(_RE_MISMATCH_HEADER.match(ln) for ln in lines):
-        result["kind"] = "mismatch"
-        ibex_mnem = ""
-        spike_mnem = ""
-        for ln in lines:
-            m = _RE_IBEX_LINE.match(ln)
-            if m:
-                ibex_mnem = m.group(1)
-            m = _RE_SPIKE_LINE.match(ln)
-            if m:
-                spike_mnem = m.group(1)
-            if ibex_mnem and spike_mnem:
-                break
-        result["mnemonics"] = (ibex_mnem, spike_mnem)
-    else:
-        for ln in lines:
-            m = _RE_REGR_FAILED.match(ln.strip())
-            if m:
-                result["kind"] = "failed_only"
-                # Drop a trailing .N seed suffix so cases with different seeds
-                # of the same test fall into the same bucket.
-                tname = m.group(1)
-                tname = re.sub(r"\.\d+$", "", tname)
-                result["test_name"] = tname
-                break
-
+    if result["kind"] == "unknown":
+        if any(_RE_MISMATCH.match(ln) for ln in data.splitlines()):
+            result["kind"] = "mismatch"
+            return result
+    for ln in data.splitlines():
+        m = _RE_REGR_FAILED.match(ln.strip())
+        if m:
+            result["kind"] = "failed_only"
+            result["test_name"] = re.sub(r"\.\d+$", "", m.group(1))
+            break
     return result
 
 
-def extract_sim(path: str) -> dict:
-    """Parse a sim.log[.gz]."""
-    result = {
+# ---------------------------------------------------------------------------
+# sim.log
+# ---------------------------------------------------------------------------
+
+def _classify_fatal(raw: str, normalized: str) -> str:
+    for kind, pat in _FATAL_KIND_RULES:
+        if pat.search(raw) or pat.search(normalized):
+            return kind
+    if normalized and "UVM_FATAL reports" not in normalized:
+        return "other_fatal"
+    return ""
+
+
+def _empty_sim() -> dict:
+    return {
         "verdict": "unknown",
-        "fatal_template": "",
-        "fatal_category": "",
+        "fatal_kind": "",
         "fatal_source": "",
+        "fatal_template": "",
         "error_asserts": (),
         "uvm_testname": "",
-        "bin_name": "",
-        "fatal_messages": [],   # raw normalized lines for the text blob
         "error_messages": [],
     }
-    error_asserts = set()
-    fatal_lines: list[str] = []
-    fatal_raw: str = ""
+
+
+def extract_sim(path: str) -> dict:
+    result = _empty_sim()
+    error_asserts: set[str] = set()
     error_lines: list[str] = []
+    fatal_raw = ""
+    fatal_norm = ""
     bytes_read = 0
     try:
         with open_log(path) as f:
@@ -219,34 +220,25 @@ def extract_sim(path: str) -> dict:
                 bytes_read += len(line)
                 if bytes_read > _SIM_MAX_BYTES:
                     break
-
                 if not result["uvm_testname"]:
                     m = _RE_TESTNAME.search(line)
                     if m:
                         result["uvm_testname"] = m.group(1)
-                if not result["bin_name"]:
-                    m = _RE_BIN.search(line)
-                    if m:
-                        bn = _RE_BIN_NAME.search(m.group(1))
-                        if bn:
-                            result["bin_name"] = bn.group(1)
-
                 if _RE_VERDICT_PASS.search(line):
                     result["verdict"] = "passed"
                 elif _RE_VERDICT_FAIL.search(line):
                     result["verdict"] = "failed"
-
-                fatal_match = _RE_UVM_FATAL.search(line)
-                if fatal_match and len(fatal_lines) < _SIM_FIRST_FATAL_CAP:
-                    raw = fatal_match.group(0)
-                    fatal_lines.append(normalize_message(raw))
-                    if not fatal_raw:
-                        fatal_raw = raw
-
-                err_match = _RE_UVM_ERROR.search(line)
-                if err_match:
-                    if len(error_lines) < 16:
-                        error_lines.append(normalize_message(err_match.group(0)))
+                fm = _RE_UVM_FATAL.search(line)
+                if fm and not fatal_raw:
+                    fatal_raw = fm.group(0)
+                    fatal_norm = normalize_message(fatal_raw)
+                    fatal_norm = re.sub(
+                        r"^UVM_FATAL\s+<PATH>\(<N>\)\s*", "UVM_FATAL ", fatal_norm
+                    )
+                em = _RE_UVM_ERROR.search(line)
+                if em:
+                    if len(error_lines) < 8:
+                        error_lines.append(normalize_message(em.group(0)))
                     name = _RE_ASSERT_NAME.search(line)
                     if name:
                         error_asserts.add(name.group(1))
@@ -257,39 +249,41 @@ def extract_sim(path: str) -> dict:
     except OSError:
         return result
 
-    if fatal_lines:
-        # Strip leading file location to keep only the message.
-        first = fatal_lines[0]
-        first = re.sub(r"^UVM_FATAL\s+<PATH>\(<N>\)\s*", "UVM_FATAL ", first)
-        result["fatal_template"] = first
-
     if fatal_raw:
         m = _RE_FATAL_SOURCE.search(fatal_raw)
         if m:
             result["fatal_source"] = os.path.basename(m.group(1))
-        if _RE_FATAL_TIMEOUT.search(fatal_raw):
-            result["fatal_category"] = "timeout"
-        elif _RE_FATAL_CHECK.search(fatal_raw):
-            result["fatal_category"] = "check"
-        else:
-            result["fatal_category"] = "other"
-    else:
-        result["fatal_category"] = "none"
-
+        result["fatal_kind"] = _classify_fatal(fatal_raw, fatal_norm)
+        result["fatal_template"] = fatal_norm
     result["error_asserts"] = tuple(sorted(error_asserts))
-    result["fatal_messages"] = fatal_lines
     result["error_messages"] = error_lines
     return result
 
 
+# ---------------------------------------------------------------------------
+# trace.log
+# ---------------------------------------------------------------------------
+
+def _length_bucket(total: int) -> str:
+    if total < 1_000:
+        return "short"
+    if total < 10_000:
+        return "medium"
+    if total < 100_000:
+        return "long"
+    return "huge"
+
+
 def extract_trace(path: str, tail: int = _TRACE_TAIL) -> dict:
-    """Stream a trace.log[.gz] and return tail statistics."""
     result = {
         "mnemonics": (),
+        "loop_mnems": (),
         "unique_pcs": 0,
         "total": 0,
         "has_repeating_tail": False,
         "tail_text": "",
+        "length_bucket": "",
+        "tail_uniformity": 0.0,
     }
     window: deque[tuple[str, str]] = deque(maxlen=tail)
     total = 0
@@ -299,9 +293,7 @@ def extract_trace(path: str, tail: int = _TRACE_TAIL) -> dict:
                 m = _RE_TRACE_LINE.match(line)
                 if not m:
                     continue
-                pc = m.group(3).lower()
-                mnem = m.group(5)
-                window.append((pc, mnem))
+                window.append((m.group(3).lower(), m.group(5)))
                 total += 1
     except OSError:
         return result
@@ -310,28 +302,63 @@ def extract_trace(path: str, tail: int = _TRACE_TAIL) -> dict:
         return result
 
     pcs = [pc for pc, _ in window]
-    mnems = [m for _, m in window]
+    mnems = [mn for _, mn in window]
     unique_pcs = len(set(pcs))
-    result["unique_pcs"] = unique_pcs
     result["total"] = total
-    # If we saw many lines but the tail occupies few PCs, the core was
-    # likely stuck in a tight loop -- a classic mismatch symptom.
+    result["unique_pcs"] = unique_pcs
+    result["length_bucket"] = _length_bucket(total)
     result["has_repeating_tail"] = (
         len(window) >= 10 and unique_pcs <= max(2, len(window) // 4)
     )
     result["mnemonics"] = tuple(mnems[-8:])
+    result["loop_mnems"] = tuple(sorted(set(mnems)))
     result["tail_text"] = " ".join(mnems[-16:])
+    counts = Counter(mnems[-16:])
+    result["tail_uniformity"] = counts.most_common(1)[0][1] / max(len(mnems[-16:]), 1)
     return result
 
 
 # ---------------------------------------------------------------------------
-# Top-level: case -> features
+# Signature assembly
 # ---------------------------------------------------------------------------
 
-def _resolve(base_dir: str, rel: str) -> str:
-    if os.path.isabs(rel):
-        return rel
-    return os.path.join(base_dir, rel)
+def _failure_mode(regr_kind: str, sim: dict) -> str:
+    if regr_kind == "mismatch":
+        return "mismatch"
+    if sim["error_asserts"] and not sim["fatal_kind"]:
+        return "assert"
+    if sim["fatal_kind"]:
+        return "fatal"
+    return "unknown"
+
+
+def _build_text_blob(sig: CaseSignature, sim: dict, trace: dict) -> str:
+    if sig.failure_mode == "mismatch":
+        parts = ["MODE_mismatch", "MODE_mismatch", f"LEN_{sig.trace_length_bucket}"]
+        if sig.trace_loop_mnems:
+            parts.extend([f"LOOP_{m}" for m in sig.trace_loop_mnems])
+        if sig.has_repeating_tail:
+            parts.extend(["REPEAT_TAIL"] * 3)
+        if sig.tail_mnem_uniformity >= 0.75:
+            parts.append(f"UNIFORM_{sig.tail_mnem_uniformity:.2f}")
+        if trace["tail_text"]:
+            parts.append("TAIL " + trace["tail_text"])
+        return " ".join(parts)
+
+    parts = [f"MODE_{sig.failure_mode}", f"REGR_{sig.regr_kind}"]
+    if sig.sim_fatal_kind:
+        parts.extend([f"FATAL_{sig.sim_fatal_kind}"] * 3)
+    if sig.sim_fatal_source:
+        parts.extend([f"FATALSRC_{sig.sim_fatal_source}"] * 2)
+    for asrt in sig.sim_error_asserts:
+        parts.extend([f"ASSERT_{asrt}"] * 3)
+    if sig.regr_test_name:
+        parts.extend([f"REGRTEST_{sig.regr_test_name}"] * 2)
+    if sig.sim_uvm_testname:
+        parts.append(f"UVMTEST_{sig.sim_uvm_testname}")
+    for msg in sim.get("error_messages", [])[:2]:
+        parts.append(re.sub(r"[^A-Za-z_]+", " ", msg))
+    return " ".join(parts)
 
 
 def build_case_features(
@@ -341,81 +368,40 @@ def build_case_features(
     sim_rel: str,
     trace_rel: str,
 ) -> CaseFeatures:
-    """Extract features for a single case."""
-    regr = extract_regr(_resolve(base_dir, regr_rel))
-    sim = extract_sim(_resolve(base_dir, sim_rel))
-    trace = extract_trace(_resolve(base_dir, trace_rel))
+    regr_path = _resolve(base_dir, regr_rel)
+    trace_path = _resolve(base_dir, trace_rel)
+
+    regr_kind = detect_regr_kind(regr_path)
+    trace = extract_trace(trace_path)
+
+    if regr_kind == "mismatch":
+        regr = extract_regr(regr_path, kind="mismatch")
+        sim = _empty_sim()
+    else:
+        regr = extract_regr(regr_path, kind=regr_kind)
+        sim = extract_sim(_resolve(base_dir, sim_rel))
 
     sig = CaseSignature(
-        sim_verdict=sim["verdict"],
-        sim_fatal_template=sim["fatal_template"],
-        sim_fatal_category=sim["fatal_category"],
+        failure_mode=_failure_mode(regr["kind"], sim),
+        regr_kind=regr["kind"],
+        sim_fatal_kind=sim["fatal_kind"],
         sim_fatal_source=sim["fatal_source"],
         sim_error_asserts=sim["error_asserts"],
-        sim_uvm_testname=sim["uvm_testname"],
-        sim_bin_name=sim["bin_name"],
-        regr_kind=regr["kind"],
         regr_test_name=regr["test_name"],
-        regr_mismatch_mnemonics=regr["mnemonics"],
+        sim_uvm_testname=sim["uvm_testname"],
         trace_tail_mnemonics=trace["mnemonics"],
-        trace_tail_unique_pcs=trace["unique_pcs"],
-        trace_tail_total=trace["total"],
+        trace_loop_mnems=trace["loop_mnems"],
+        trace_length_bucket=trace["length_bucket"],
+        tail_mnem_uniformity=trace["tail_uniformity"],
         has_repeating_tail=trace["has_repeating_tail"],
+        trace_total=trace["total"],
     )
-
-    # Compact, deterministic, normalized text used by the TF-IDF fallback.
-    # Tokens that strongly identify a bug (verdict, fatal template, assertion
-    # names) are repeated so TF-IDF gives them more weight than the noisy
-    # tail / regr text.
-    parts: list[str] = []
-    parts.extend([f"VERDICT_{sim['verdict']}"] * 3)
-    parts.append(f"REGRKIND_{regr['kind']}")
-    parts.append(f"REGRKIND_{regr['kind']}")
-
-    if sim["fatal_template"]:
-        # Compact the template into a single tag to keep TF-IDF aligned across
-        # cases with the same fatal class.
-        fatal_tag = re.sub(r"[^A-Za-z]+", "_", sim["fatal_template"])[:80]
-        parts.extend([f"FATAL_{fatal_tag}"] * 3)
-    else:
-        parts.append("FATAL_NONE")
-    if sim["fatal_category"]:
-        parts.extend([f"FATALCAT_{sim['fatal_category']}"] * 2)
-    if sim["fatal_source"]:
-        parts.extend([f"FATALSRC_{sim['fatal_source']}"] * 2)
-
-    if sim["error_asserts"]:
-        for asrt in sim["error_asserts"]:
-            parts.extend([f"ASSERT_{asrt}"] * 3)
-        parts.append("HAS_ASSERT")
-    else:
-        parts.append("NO_ASSERT")
-
-    if sim["uvm_testname"]:
-        parts.append(f"UVMTEST_{sim['uvm_testname']}")
-    if sim["bin_name"]:
-        parts.append(f"BIN_{sim['bin_name']}")
-    if regr["test_name"]:
-        parts.append(f"REGRTEST_{regr['test_name']}")
-
-    if any(regr["mnemonics"]):
-        ib, sp = regr["mnemonics"]
-        parts.extend([f"IBEX_{ib}", f"SPIKE_{sp}"] * 2)
-
-    if trace["tail_text"]:
-        parts.append("TAIL " + trace["tail_text"])
-    if trace["has_repeating_tail"]:
-        parts.append("REPEAT_TAIL")
-
-    # A small amount of normalized error context (helps discriminate
-    # different bugs that share assertion names but differ in their UVM
-    # message bodies, e.g. "Check failed mca" vs plain timeouts).
-    for msg in sim["error_messages"][:3]:
-        parts.append(re.sub(r"[^A-Za-z_]+", " ", msg))
-
-    return CaseFeatures(case_id=case_id, signature=sig, text_blob=" ".join(parts))
+    return CaseFeatures(
+        case_id=case_id,
+        signature=sig,
+        text_blob=_build_text_blob(sig, sim, trace),
+    )
 
 
 def iter_summary(features: Iterable[CaseFeatures]) -> Counter:
-    """Useful for debugging: counts of distinct categorical keys."""
     return Counter(f.signature.categorical_key() for f in features)

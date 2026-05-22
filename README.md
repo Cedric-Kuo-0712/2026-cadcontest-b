@@ -27,23 +27,22 @@ input.csv ──► features.py ──► clustering.py ──► output.csv
 ```
 
 `src/features.py`
-:  Streams each log file and produces a structured `CaseSignature` (UVM
-   verdict, normalized `UVM_FATAL` template + source file + coarse category,
-   sorted assertion names, mismatch mnemonics, trace-tail loop statistics)
-   together with a compact normalized text blob for downstream vectorizers.
+:  Mode-aware feature routing:
+   - **`regr.log` mismatch** → features from `trace.log` only (loop mnemonics,
+     tail uniformity, length bucket, repeating-tail flag).
+   - **otherwise** → features from `sim.log` + `regr.log` (canonical fatal kind,
+     assertion set, fatal source file, failing test name).
 
 `src/clustering.py`
-:  Three strategies:
-   - `signature` — bucket by exact categorical key.
-   - `tfidf` — TF-IDF on the text blob → Agglomerative (cosine, average).
-   - `hybrid` *(default)* — Custom precomputed distance combining signature
-     overlap (mode, fatal source/category, assertion-set Jaccard, mismatch
-     mnemonics, trace-tail similarity) with a small TF-IDF cosine residual,
-     fed to AgglomerativeClustering with `metric=precomputed`.
+:  Strategies:
+   - `signature` — exact categorical key.
+   - `tfidf` — TF-IDF + agglomerative (cosine).
+   - `hybrid` *(default)* — mode-specific pairwise distance (trace-only for
+     mismatch; assert/fatal-aware for others) blended with TF-IDF cosine;
+     identical signatures are must-linked (distance 0).
 
 `src/regr_fail_bucketing.py`
-:  CLI entry point matching the contest interface:
-   `regr_fail_bucketing --input <csv> --output <csv> --k <k>`.
+:  CLI entry point; parallel feature extraction via `--workers` (default: auto).
 
 The implementation is deterministic (no LLM dependency by default),
 streaming-friendly (gzipped sim/trace logs are read line-by-line with a
@@ -90,12 +89,12 @@ python3 eval.py \
 
 | Benchmark | N  | K | Balanced Accuracy |
 |-----------|----|---|-------------------|
-| Set 1     | 9  | 2 | 0.625             |
-| Set 1's ceiling is limited by two cases (bug_7023 cases 7 and 9) that share
-identical `+UVM_TESTNAME`, `+bin`, `+seed`, end-of-trace, line counts, and
-UVM message templates with two bug_304 cases — i.e. they are unidentifiable
-from the logs alone without bug-specific prior knowledge. |
-| Set 2     | 27 | 4 | 0.901             |
+| Set 1     | 9  | 2 | 0.475             |
+| Set 2     | 27 | 4 | **0.944**         |
+
+Set 1 is limited by cases that share identical UVM timeout templates, test
+names, and trace tails across different bugs (e.g. bug_304 case 5 vs bug_7023
+case 9) — they are unidentifiable from the logs alone.
 
 ## LLM (optional)
 
