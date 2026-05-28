@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Regression Failure Bucketing - Improved Implementation
-Hierarchical clustering by error_type + multi-view features with weighted priorities
+Regression Failure Bucketing - split-track implementation
 """
 
 import argparse
@@ -16,8 +15,7 @@ from log_parser import (
     RegrLogParser, SimLogParser, TraceLogParser, 
     classify_error_type
 )
-from feature_extractor import WeightedMultiViewFeatureExtractor
-from clustering import HierarchicalClustering
+from split_track_bucketing import SplitTrackBucketer
 
 
 def set_seed(seed: int = 42):
@@ -29,7 +27,7 @@ def set_seed(seed: int = 42):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Regression Failure Bucketing - Improved Hierarchical Approach"
+        description="Regression Failure Bucketing - split-track approach"
     )
     parser.add_argument("--input", required=True, help="Input CSV with log file paths")
     parser.add_argument("--output", required=True, help="Output CSV with bucket assignments")
@@ -40,7 +38,7 @@ def main():
     set_seed(42)
     
     if args.verbose:
-        print("[*] Starting Regression Failure Bucketing (Improved)...")
+        print("[*] Starting Regression Failure Bucketing (split-track)...")
     
     # Stage 0: Load input CSV
     try:
@@ -101,41 +99,12 @@ def main():
         traceback.print_exc()
         sys.exit(1)
     
-    # Stage 2: Weighted multi-view feature extraction
+    # Stage 2: Split-track clustering
     if args.verbose:
-        print("[*] Stage 2: Weighted multi-view feature extraction...")
-    
-    feature_extractor = WeightedMultiViewFeatureExtractor(
-        regr_tfidf_dim=128,
-        sim_ngram_dim=64,
-        trace_instr_pool_size=20
-    )
+        print("[*] Stage 2: Split-track clustering...")
     
     try:
-        features = feature_extractor.extract_features_batch(cases, parsed_results)
-        feature_dim = feature_extractor.get_feature_dimension()
-        if args.verbose:
-            print(f"[*] Feature dimension: {feature_dim}")
-            print(f"[*] Feature matrix shape: {features.shape}")
-    except Exception as e:
-        print(f"[!] Feature extraction failed: {e}", file=sys.stderr)
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-    
-    # Stage 3: Hierarchical clustering by error type
-    if args.verbose:
-        print("[*] Stage 3: Hierarchical clustering...")
-    
-    clusterer = HierarchicalClustering(linkage="ward", seed=42)
-    
-    try:
-        labels = clusterer.cluster_hierarchical(
-            features, 
-            parsed_results,
-            n_clusters=args.k,
-            verbose=args.verbose
-        )
+        labels = SplitTrackBucketer(seed=42).cluster(parsed_results, args.k, args.verbose)
         
         if args.verbose:
             unique_labels = len(set(labels))
