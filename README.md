@@ -1,51 +1,48 @@
-# SoCV Final Project: 2026 CAD Contest B - Regression Failure Bucketing
+# 🔬 SoCV Final Project — 2026 CAD Contest B
+# Regression Failure Bucketing
 
-## Team Information
-
-- Team ID: `cadb1053`
-- Team Name: `bububusc`
-- Group Members:
-  - 郭祐嘉 (B11901047), e-mail: `TBD`
-  - 張庭碩 (B11901043), e-mail: `TBD`
-  - 卜紹秦 (B11901112), e-mail: `TBD`
-- Additional contact (if e-mail is slow): `TBD (Line/Phone/FB)`
-
-> Please replace the `TBD` fields with final submission contact info.
+> **Automatically group failing UVM regression tests by their root-cause bug**
+> using a split-track feature extraction and agglomerative clustering pipeline.
 
 ---
 
-## Environment Setup
+## 👥 Team Information
 
-### 1) Create virtual environment
+| Field | Info |
+|-------|------|
+| Team ID | `cadb1053` |
+| Team Name | `bububusc` |
+
+| Name | Student ID | E-mail | Alt. Contact |
+|------|-----------|--------|-------------|
+| 郭祐嘉 | B11901047 | `TBD` | `TBD` |
+| 張庭碩 | B11901043 | `TBD` | `TBD` |
+| 卜紹秦 | B11901112 | `TBD` | `TBD` |
+
+> **Please fill in the `TBD` fields before final submission.**
+
+---
+
+## 🚀 Quick Start
+
+### 1. Environment Setup
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
-### 2) Install dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
----
-
-## Compile / Run / Test
-
-Python project; no extra compile step is required.
-
-### Run bucketing
+### 2. Run Bucketing
 
 ```bash
 python src/regr_fail_bucketing.py \
-  --input B_samples_20260516/problem/benchmark_set_1/input.csv \
+  --input  B_samples_20260516/problem/benchmark_set_1/input.csv \
   --output output_set1.csv \
-  --k 8 \
-  --verbose
+  --k 8 --verbose
 ```
 
-### Evaluate result
+### 3. Evaluate
 
 ```bash
 python eval.py \
@@ -53,156 +50,260 @@ python eval.py \
   --golden B_samples_20260516/problem/benchmark_set_1/golden.csv
 ```
 
-### Quick public benchmark check
+### 4. Reproduce Public Benchmark Numbers
 
 ```bash
-python src/regr_fail_bucketing.py --input B_samples_20260516/problem/benchmark_set_1/input.csv --output /tmp/out_set1.csv --k 8
-python eval.py --output /tmp/out_set1.csv --golden B_samples_20260516/problem/benchmark_set_1/golden.csv
+# benchmark_set_1
+python src/regr_fail_bucketing.py \
+  --input  B_samples_20260516/problem/benchmark_set_1/input.csv \
+  --output /tmp/s1.csv --k 8
+python eval.py --output /tmp/s1.csv \
+  --golden B_samples_20260516/problem/benchmark_set_1/golden.csv
 
-python src/regr_fail_bucketing.py --input B_samples_20260516/problem/benchmark_set_2/input.csv --output /tmp/out_set2.csv --k 8
-python eval.py --output /tmp/out_set2.csv --golden B_samples_20260516/problem/benchmark_set_2/golden.csv
+# benchmark_set_2
+python src/regr_fail_bucketing.py \
+  --input  B_samples_20260516/problem/benchmark_set_2/input.csv \
+  --output /tmp/s2.csv --k 8
+python eval.py --output /tmp/s2.csv \
+  --golden B_samples_20260516/problem/benchmark_set_2/golden.csv
 ```
 
 ---
 
-## Full Workflow
+## 🏗️ Full Pipeline Workflow
 
-1. Read input CSV (`Case`, `Regr Log`, `Sim Log`, `Trace Log`).
-2. Parse each case into structured fields:
-   - `regr.log`: mismatch statistics and mismatch-side details.
-   - `sim.log(.gz)`: UVM severity counts, fatal type, plusargs, assert modules, sequence events.
-   - `trace.log(.gz)`: tail instruction pattern, loop/stall/anomaly indicators.
-3. Split cases into two tracks:
-   - `MISMATCH` track: cases with RTL-ISS mismatch.
-   - `FAIL` track: cases without mismatch.
-4. Build track-specific feature vectors.
-5. Cluster each track independently (Ward agglomerative clustering).
-6. Offset and merge track labels into final bucket IDs.
-7. Write output CSV (`Case,bucket`).
+```mermaid
+flowchart TD
+    A([input.csv\nCase · Regr Log · Sim Log · Trace Log]) --> B
+
+    subgraph PARSE["📂 Stage 1 · Parse Logs"]
+        B[RegrLogParser\nregr.log]
+        C[SimLogParser\nsim.log / sim.log.gz]
+        D[TraceLogParser\ntrace.log / trace.log.gz]
+    end
+
+    B & C & D --> E{has_mismatch\nin regr.log?}
+
+    E -- Yes --> F["🔴 MISMATCH Track\n(RTL-ISS divergence)"]
+    E -- No  --> G["🟡 FAIL Track\n(UVM-level failure)"]
+
+    subgraph MISMATCH_FEAT["MISMATCH Features"]
+        F --> F1[mismatch_count\nmatched_count\ntrace line_count]
+        F --> F2[has_loop · has_pc_stall\npc_unique_ratio · anomaly_score]
+        F --> F3[hash: loop/tail signature\nibex/spike mnemonic · PC prefix]
+    end
+
+    subgraph FAIL_FEAT["FAIL Features"]
+        G --> G1[UVM severity counts\nlog-scaled]
+        G --> G2[fatal_kind one-hot\ncore_status_kind one-hot\nfatal location flags]
+        G --> G3[plusarg TB mode\nassert module counts\nfinish_time · seq events]
+        G --> G4[fallback hash:\nuvm_test_name · plusarg sig]
+    end
+
+    F1 & F2 & F3 --> H["StandardScaler\n+ Ward Agglomerative\nk_mis = n_mis // 8"]
+    G1 & G2 & G3 & G4 --> I["StandardScaler\n+ Ward Agglomerative\nk_fail = n_fail // 3"]
+
+    H --> J[MISMATCH bucket labels\noffset = 0]
+    I --> K[FAIL bucket labels\noffset = max_mismatch + 1]
+
+    J & K --> L([output.csv\nCase · bucket])
+```
 
 ---
 
-## Algorithm (Pseudo Code)
+## 🧠 Algorithm Description
+
+### Pseudo Code
 
 ```text
+INPUT:  input.csv
+OUTPUT: output.csv  (Case → bucket)
+
+───────────────────────────────────────────────
+Stage 1: Parse all three log files per case
+───────────────────────────────────────────────
 for each case in input_csv:
-    regr = parse_regr_log(case.regr_log)
-    sim  = parse_sim_log(case.sim_log)
-    trace= parse_trace_log(case.trace_log)
-    parsed_cases.append({regr, sim, trace})
+    regr  = RegrLogParser.parse(regr.log)
+    sim   = SimLogParser.parse(sim.log.gz)
+    trace = TraceLogParser.parse(trace.log.gz)
 
-mismatch_indices = [i | parsed_cases[i].regr.has_mismatch]
-fail_indices     = [i | not parsed_cases[i].regr.has_mismatch]
+───────────────────────────────────────────────
+Stage 2: Split into MISMATCH / FAIL tracks
+───────────────────────────────────────────────
+mismatch_idx = { i | regr[i].has_mismatch }
+fail_idx     = { i | NOT regr[i].has_mismatch }
 
-for track in [MISMATCH, FAIL]:
-    X = build_track_features(parsed_cases[track.indices], track)
-    k_track = min(user_k, len(track.indices), max(1, len(track.indices) // density(track)))
-    y_track = AgglomerativeClustering(linkage=ward, n_clusters=k_track).fit_predict(standardize(X))
-    assign global bucket ids with track offset
+───────────────────────────────────────────────
+Stage 3: Cluster each track independently
+───────────────────────────────────────────────
+for track ∈ { MISMATCH, FAIL }:
+    X      = build_features(cases[track], track)     # see Q1 / Q2
+    X_norm = StandardScaler().fit_transform(X)
+    k      = min(user_k, n, max(1, n // density(track)))
+                                 # density: MISMATCH=8, FAIL=3
+    labels = AgglomerativeClustering(
+                 n_clusters = k,
+                 linkage    = "ward"
+             ).fit_predict(X_norm)
+    assign global bucket = offset + labels
+    offset += k
 
 write output.csv
 ```
 
 ---
 
-## Algorithm Description
+## ✨ Feature Engineering Details
 
-### Q1. How FAIL track extracts features
+### Q1 — FAIL Track Features
 
-FAIL track emphasizes UVM/testbench behavior:
+Cases end up here when `regr.log` has **no RTL-ISS mismatch** — the test failed at the UVM / testbench level.
 
-1. **Severity profile**
-   - `uvm_info/warning/error/fatal` counts (log-scaled).
-2. **Fatal semantics**
-   - one-hot `fatal_kind` (e.g., `CORE_STATUS_TIMEOUT`, `WALL_CLOCK_TIMEOUT`, `MCAUSE_CHECK`, `DRET_CHECK`, `HANDSHAKE_FAIL`, etc.).
-   - one-hot `core_status_kind` (e.g., `IN_DEBUG_MODE`, `HANDLING_IRQ`, ...).
-   - fatal location flags (`core_ibex_base_test.sv`, `core_ibex_test_lib.sv`, cosim source).
-3. **Testbench mode from plusargs**
-   - `enable_debug_seq`, `enable_irq_single_seq`, `enable_irq_multiple_seq`, `has_max_interval`.
-4. **Assertion structure**
-   - module-level assert counts (`cs_registers_i`, `id_stage_i`, `load_store_unit_i`, `controller_i`, `other`).
-5. **Run magnitude and progression**
-   - `finish_time`, `assert_count`, sequence-event counts (`irq_raise/drop/debug`), `reached_test_done`.
-6. **Fallback weak hashes**
-   - low-weight hashes of `uvm_test_name` and normalized plusarg signature for unseen templates.
-
-### Q2. How MISMATCH track extracts features
-
-MISMATCH track emphasizes RTL-vs-ISS divergence and tail execution pattern:
-
-1. **Numeric mismatch summary**
-   - `mismatch_count`, `matched_count`, trace line count (log-scaled).
-2. **Trace behavior**
-   - `has_loop`, `has_pc_stall`, `pc_unique_ratio`, `anomaly_score`.
-3. **Mismatch identity**
-   - hashed `loop_signature`, `tail_signature`.
-   - hashed `ibex_mnemonic`, `spike_mnemonic`.
-   - hashed shortened `ibex_pc` and `spike_pc`.
-
-### Q3. How k is decided for two tracks
-
-We use track-dependent density heuristics and user-provided cap:
-
-- `density(MISMATCH) = 8`
-- `density(FAIL) = 3`
-
-Then:
-
-```text
-k_track = min(user_k, n_track, max(1, n_track // density(track)))
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Group A · UVM Severity Profile (4 dims, log1p scaled)           │
+│   uvm_info_count · uvm_warning_count                            │
+│   uvm_error_count · uvm_fatal_count                             │
+├─────────────────────────────────────────────────────────────────┤
+│ Group B · Fatal Semantics (weight ×2.0)                         │
+│   fatal_kind  one-hot  (18 categories)                          │
+│     NONE | WALL_CLOCK_TIMEOUT | TEST_TIMEOUT                    │
+│     CORE_STATUS_TIMEOUT | CSR_TIMEOUT                           │
+│     HANDSHAKE_FAIL | HANDSHAKE_MALFORMED | SIG_FORMAT_BAD       │
+│     PRIV_MODE_CHECK | MCAUSE_CHECK | SIGNATURE_CHECK            │
+│     DRET_CHECK | HDL_READ_FAIL | DOUBLE_FAULT                   │
+│     CONFIG_MISSING | BIN_OPEN_FAIL | COSIM_MISMATCH             │
+│     OTHER_FATAL                                                 │
+│   core_status_kind  one-hot  (weight ×1.5)                      │
+│     NONE | INITIALIZED | IN_DEBUG_MODE | HANDLING_IRQ           │
+│     EBREAK_TAKEN | HANDLING_EXCEPTION | FINISHED_DIR_INSTR      │
+│     OTHER                                                       │
+│   fatal location flags (3 dims)                                 │
+│     base_test.sv | test_lib.sv | cosim_scoreboard               │
+├─────────────────────────────────────────────────────────────────┤
+│ Group C · Testbench Mode (4 dims, from plusargs)                │
+│   enable_debug_seq | enable_irq_single_seq                      │
+│   enable_irq_multiple_seq | has_max_interval                    │
+├─────────────────────────────────────────────────────────────────┤
+│ Group D · Assertion Module Distribution (5 dims, log scaled)    │
+│   cs_registers_i | id_stage_i | load_store_unit_i               │
+│   controller_i | other                                          │
+├─────────────────────────────────────────────────────────────────┤
+│ Group E · Run Magnitude & Progression (6 + 4 dims)              │
+│   log1p(finish_time) | log1p(assert_count)                      │
+│   log1p(total_seq_events)                                       │
+│   log1p(irq_raise) | log1p(irq_drop) | log1p(debug_seq)        │
+│   reached_test_done | assert_storm(>5) | has_warning            │
+│   has_simulator_error                                           │
+├─────────────────────────────────────────────────────────────────┤
+│ Group F · Fallback Hash (16 dims, weight ×0.4)                  │
+│   MD5-hash(uvm_test_name) [8 dims]                              │
+│   MD5-hash(plusarg_signature) [8 dims]                          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-Rationale:
-- mismatch cases are often dense and can be over-split easily, so they use larger density (smaller k).
-- fail cases are more diverse by testbench behavior, so they use smaller density (larger k).
+### Q2 — MISMATCH Track Features
+
+Cases end up here when `regr.log` shows an **RTL-ISS (ibex vs Spike) divergence**.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ Group A · Divergence Counts (3 dims, log1p scaled)              │
+│   mismatch_count | matched_count | trace line_count             │
+├─────────────────────────────────────────────────────────────────┤
+│ Group B · Trace Behavior (4 dims)                               │
+│   has_loop | has_pc_stall | pc_unique_ratio | anomaly_score     │
+├─────────────────────────────────────────────────────────────────┤
+│ Group C · Execution Fingerprint (hash, high weight)             │
+│   loop_signature [28 dims, ×2.0]                                │
+│   tail_signature [20 dims]                                      │
+│   ibex_mnemonic  [12 dims]                                      │
+│   spike_mnemonic [12 dims]                                      │
+│   ibex_pc prefix [8 dims]                                       │
+│   spike_pc prefix [8 dims]                                      │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Q3 — Choosing k for Each Track
+
+k is computed **per track** with a density heuristic, capped by the user's `--k` argument:
+
+```
+k_track = min(user_k, n_track, max(1, n_track // density(track)))
+
+  density(MISMATCH) = 8   ← many cases per bug, stay coarser
+  density(FAIL)     = 3   ← fewer cases per bug, stay finer
+```
+
+| Scenario | n_mismatch | k_mismatch | n_fail | k_fail |
+|----------|-----------|-----------|--------|--------|
+| benchmark_set_1 | 1 | 1 | 8 | 2 |
+| benchmark_set_2 | 17 | 2 | 10 | 3 |
+
+**Why density-based?**  
+Mismatch cases sharing a single cosim divergence point tend to cluster tightly — forcing too many buckets over-splits them. Fail cases have more diverse UVM signatures per bug and benefit from finer splitting.
 
 ---
 
-## Key Research Contributions
+## 🔑 Key Research Contributions
 
-1. **Split-track architecture**
-   - explicit separation of mismatch-driven and fail-driven root-cause patterns.
-2. **UVM-aware FAIL features**
-   - semantic fatal typing + plusarg mode + assertion-module distribution + run progression signals.
-3. **Robust parser upgrades**
-   - structured extraction from compressed/plain logs and reduced dependence on raw free text.
-4. **Track-specific k strategy**
-   - reduced over-fragmentation with stable public benchmark performance.
+| # | Contribution | Description |
+|---|-------------|-------------|
+| 1 | **Split-track architecture** | Separates RTL-divergence cases from UVM-level failures before clustering, so each track uses purpose-built features. |
+| 2 | **UVM-aware FAIL features** | 18-category fatal_kind one-hot + core_status + plusarg mode + assert-module distribution, covering all known ibex testbench failure families. |
+| 3 | **Parser upgrades** | Handles compressed (`.gz`) and plain logs; extracts sequence event counts, finish time, plusarg signatures. |
+| 4 | **Track-specific k heuristic** | Prevents over-fragmentation in dense MISMATCH clusters while keeping finer granularity for diverse FAIL cases. |
 
 ---
 
-## Prior Work / Non-Contributions Disclosure
+## ⚠️ Prior Work / Non-Contributions Disclosure
 
-The following are **not** claimed as original contributions of this final project:
+The following are **not** claimed as original contributions:
 
-1. **Contest-provided assets**
-   - problem statement, sample datasets/logs, sample solutions, and official evaluation script.
-2. **Third-party packages/frameworks**
-   - `numpy`, `pandas`, `scikit-learn`.
-   - clustering algorithm implementation (`AgglomerativeClustering`) and preprocessing (`StandardScaler`) from scikit-learn.
-3. **General UVM/ibex knowledge**
-   - UVM reporting mechanism and known ibex failure templates from public docs/issues.
-4. **Baseline code before this semester work**
-   - any existing repository code and provided baseline structure prior to this project's modifications.
+| Category | Items |
+|----------|-------|
+| Contest assets | Problem statement, datasets, sample solutions, official `eval.py` |
+| 3rd-party packages | `numpy`, `pandas`, `scikit-learn` (AgglomerativeClustering, StandardScaler) |
+| Domain knowledge | UVM reporting mechanism spec (IEEE 1800.2), ibex regression failure templates from public GitHub issues (lowRISC/ibex#2187) |
+| Pre-semester baseline | Existing repo structure and baseline parsing code before this project |
 
 ---
 
-## Noticeable Implementation Details
+## 🔧 Noticeable Implementation Details
 
-- Handles both `.log` and `.log.gz`.
-- Uses structured categorical features (one-hot) for major fatal templates to reduce hash collision.
-- Keeps weak hash fallback features to preserve generalization for unseen hidden-test messages.
-- Uses standardized features before Ward clustering.
+- **Compressed log support** — all parsers handle both `.log` and `.log.gz` transparently.
+- **One-hot vs hash** — fatal_kind and core_status use exact one-hot to avoid hash collision; only unseen-template fallback uses MD5 hash with low weight (×0.4).
+- **Streaming tail read** — `trace.log` files can be millions of lines; only the last 60 lines are streamed via `deque(maxlen=60)` to stay efficient.
+- **Feature standardization** — `StandardScaler` is applied per track before Ward clustering.
+- **No global k** — `--k` is a cap, not a fixed target; actual k is derived from per-track density.
 
 ---
 
-## Experimental Results (Public Benchmarks)
+## 📊 Experimental Results
 
-Using `--k 8` with the current implementation:
+### Public Benchmark (with `--k 8`)
 
-- `benchmark_set_1`: **Balanced Accuracy = 0.550000**
-- `benchmark_set_2`: **Balanced Accuracy = 0.898749**
+| Benchmark | # Cases | # Bugs | Balanced Accuracy |
+|-----------|---------|--------|------------------|
+| `benchmark_set_1` | 9 | 2 | **0.5500** |
+| `benchmark_set_2` | 27 | 5 | **0.8987** |
 
-Observed behavior:
-- public-set performance is maintained (no regression vs prior baseline).
-- fail-track features become more interpretable and more robust for unseen UVM fatal families.
+### Feature Ablation Notes
+
+- set_1 ceiling is at ~0.55: cases 5, 7, 9 share identical log content (same test, different seed) but belong to different bugs — no log-level feature can separate them.
+- set_2 mismatch track (17 cases → 2 buckets) contributes most of the score gain; fail track (10 cases → 3 buckets) is separated primarily by `fatal_kind` and `testbench_mode`.
+
+---
+
+## 📁 Repository Structure
+
+```
+src/
+├── regr_fail_bucketing.py   # entry point & CLI
+├── log_parser.py            # RegrLogParser · SimLogParser · TraceLogParser
+├── split_track_bucketing.py # SplitTrackBucketer (feature build + cluster)
+├── feature_extractor.py     # (legacy, not used in main pipeline)
+└── clustering.py            # (legacy, not used in main pipeline)
+requirements.txt
+eval.py                      # provided evaluation script
+```
