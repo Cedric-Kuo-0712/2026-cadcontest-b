@@ -1,0 +1,659 @@
+Command: /workspace/ibex/dv/uvm/out/rtl_sim/vcs_simv +vcs+lic+wait +signature_addr=0x8ffffffc -ucli -do /workspace/ibex/dv/uvm/vcs.tcl +ntb_random_seed=7 +UVM_TESTNAME=core_ibex_csr_test +bin=/workspace/ibex/dv/uvm/out/instr_gen/asm_tests/riscv_csr_test_0.bin -l sim.log +UVM_VERBOSITY=UVM_MEDIUM
+Chronologic VCS simulator copyright 1991-2023
+Contains Synopsys proprietary information.
+Compiler version VERSION; Runtime version VERSION;  Mar 19 00:21 2026
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_root.svh(402) @ 0: reporter [UVM/RELNOTES] 
+----------------------------------------------------------------
+UVM-1.2.Synopsys
+(C) 2007-2014 Mentor Graphics Corporation
+(C) 2007-2014 Cadence Design Systems, Inc.
+(C) 2006-2014 Synopsys, Inc.
+(C) 2011-2013 Cypress Semiconductor Corp.
+(C) 2013-2014 NVIDIA Corporation
+----------------------------------------------------------------
+
+  ***********       IMPORTANT RELEASE NOTES         ************
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_NO_DEPRECATED undefined.
+  See http://www.eda.org/svdb/view.php?id=3313 for more details.
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR undefined.
+  See http://www.eda.org/svdb/view.php?id=3770 for more details.
+
+      (Specify +UVM_NO_RELNOTES to turn off this notice)
+
+ucli% # TCL file invoked from VCS's simv at run-time using this: -ucli -do <this file>
+ucli% # Syntax: fsdbDumpfile FSDB_Name [Limit_Size]
+ucli% fsdbDumpfile "waves.fsdb"
+*Verdi* Loading libsscore_vcs202303.so
+FSDB Dumper for VCS, Release Verdi_VERSION-T-20260213, Linux x86_64/64bit, 03/17/2026
+(C) 1996 - 2026 by Synopsys, Inc.
+*Verdi* : Create FSDB file 'waves.fsdb'
+ucli% # Syntax: fsdbDumpvars [depth] [instance] [option]*
+ucli% ##############################################################################
+ucli% # Option                     Description
+ucli% ##############################################################################
+ucli% # +mda                       Dumps memory and MDA signals in all scopes.
+ucli% # +packedmda                 Dumps packed signals
+ucli% # +struct                    Dumps structs
+ucli% # +skip_cell_instance=mode  Enables or disables cell dumping
+ucli% # +strength                  Enables strength dumping
+ucli% # +parameter                 Dumps parameters
+ucli% # +power                     Dumps power-related signals
+ucli% # +trace_process             Dumps VHDL processes
+ucli% # +no_functions              Disables dumping of functions
+ucli% # +sva                       Dumps assertions
+ucli% # +Reg_Only                  Dumps only reg type signals
+ucli% # +IO_Only                   Dumps only IO port signals
+ucli% # +by_file=<filename>        File to specify objects to add
+ucli% # +all                       Dumps memories, MDA signals, structs, unions,power, and packed structs
+ucli% fsdbDumpvars 0 core_ibex_tb_top +all
+*Verdi* : Begin traversing the scope (core_ibex_tb_top), layer (0).
+*Verdi* : Enable +all dumping.
+*Verdi* : End of traversing.
+ucli% fsdbDumpSVA 0 core_ibex_tb_top.dut
+*Verdi* : Begin traversing the SVA assertions under scope (core_ibex_tb_top.dut), layer (0).
+*Verdi* : End of traversing the SVA assertions.
+ucli% run
+UVM_INFO @ 0: reporter [RNTST] Running test core_ibex_csr_test...
+UVM_INFO /workspace/ibex/dv/uvm/tests/core_ibex_base_test.sv(98) @ 199000: uvm_test_top [uvm_test_top] Running test : /workspace/ibex/dv/uvm/out/instr_gen/asm_tests/riscv_csr_test_0.bin
+UVM_INFO /workspace/ibex/dv/uvm/common/ibex_mem_intf_agent/ibex_mem_intf_slave_seq_lib.sv(28) @ 199000: uvm_test_top.env.instr_if_slave_agent.sequencer@@instr_intf_seq [uvm_test_top.env.instr_if_slave_agent.sequencer.instr_intf_seq] is_dmem_seq: 0x0
+UVM_INFO /workspace/ibex/dv/uvm/common/ibex_mem_intf_agent/ibex_mem_intf_slave_seq_lib.sv(28) @ 199000: uvm_test_top.env.data_if_slave_agent.sequencer@@data_intf_seq [uvm_test_top.env.data_if_slave_agent.sequencer.data_intf_seq] is_dmem_seq: 0x1
+core_ibex_tb_top.dut.u_ibex_tracer.printbuffer_dumpline.unnamed$$_0: Writing execution trace to trace_core_00000000.log
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 13210000ps failed at 13210000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1321000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 13210000ps failed at 13210000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1321000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 13230000ps failed at 13230000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1323000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 13930000ps failed at 13930000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1393000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 13930000ps failed at 13930000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1393000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 13950000ps failed at 13950000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1395000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 14510000ps failed at 14510000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1451000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 14510000ps failed at 14510000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1451000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 14530000ps failed at 14530000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1453000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15250000ps failed at 15250000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1525000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15270000ps failed at 15270000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1527000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15290000ps failed at 15290000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1529000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15310000ps failed at 15310000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1531000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15330000ps failed at 15330000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1533000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15350000ps failed at 15350000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1535000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15370000ps failed at 15370000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1537000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15390000ps failed at 15390000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1539000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15410000ps failed at 15410000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1541000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15430000ps failed at 15430000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1543000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15450000ps failed at 15450000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1545000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15470000ps failed at 15470000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1547000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15490000ps failed at 15490000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1549000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15510000ps failed at 15510000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1551000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15530000ps failed at 15530000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1553000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15550000ps failed at 15550000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1555000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15570000ps failed at 15570000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1557000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15590000ps failed at 15590000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1559000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15610000ps failed at 15610000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1561000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15630000ps failed at 15630000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1563000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15650000ps failed at 15650000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1565000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15670000ps failed at 15670000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1567000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15690000ps failed at 15690000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1569000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15710000ps failed at 15710000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1571000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15730000ps failed at 15730000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1573000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15750000ps failed at 15750000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1575000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15770000ps failed at 15770000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1577000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 15790000ps failed at 15790000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1579000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 15850000ps failed at 15850000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1585000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 15850000ps failed at 15850000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1585000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 15870000ps failed at 15870000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1587000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16230000ps failed at 16230000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1623000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16250000ps failed at 16250000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1625000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16270000ps failed at 16270000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1627000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16290000ps failed at 16290000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1629000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16310000ps failed at 16310000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1631000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16330000ps failed at 16330000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1633000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16350000ps failed at 16350000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1635000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16370000ps failed at 16370000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1637000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16390000ps failed at 16390000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1639000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 16410000ps failed at 16410000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1641000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 16570000ps failed at 16570000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1657000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 16570000ps failed at 16570000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1657000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 16590000ps failed at 16590000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1659000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 17390000ps failed at 17390000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1739000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 17410000ps failed at 17410000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1741000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 17450000ps failed at 17450000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1745000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 17450000ps failed at 17450000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1745000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 17470000ps failed at 17470000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1747000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 17850000ps failed at 17850000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1785000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 18090000ps failed at 18090000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1809000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 18090000ps failed at 18090000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1809000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 18110000ps failed at 18110000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1811000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 18750000ps failed at 18750000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1875000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 18770000ps failed at 18770000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1877000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 19370000ps failed at 19370000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1937000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 19370000ps failed at 19370000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1937000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 19390000ps failed at 19390000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1939000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 19910000ps failed at 19910000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1991000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 19930000ps failed at 19930000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1993000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 19950000ps failed at 19950000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1995000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 19970000ps failed at 19970000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1997000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 19990000ps failed at 19990000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 1999000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20010000ps failed at 20010000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2001000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20030000ps failed at 20030000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2003000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20050000ps failed at 20050000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2005000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20070000ps failed at 20070000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2007000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20090000ps failed at 20090000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2009000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20110000ps failed at 20110000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2011000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20130000ps failed at 20130000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2013000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20150000ps failed at 20150000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2015000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20170000ps failed at 20170000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2017000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20190000ps failed at 20190000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2019000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20210000ps failed at 20210000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2021000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20230000ps failed at 20230000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2023000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20250000ps failed at 20250000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2025000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20270000ps failed at 20270000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2027000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20290000ps failed at 20290000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2029000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20310000ps failed at 20310000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2031000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20330000ps failed at 20330000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2033000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20350000ps failed at 20350000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2035000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 20370000ps failed at 20370000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2037000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 20410000ps failed at 20410000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2041000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 20410000ps failed at 20410000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2041000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 20430000ps failed at 20430000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2043000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 21470000ps failed at 21470000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2147000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 21470000ps failed at 21470000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2147000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 21490000ps failed at 21490000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2149000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 22090000ps failed at 22090000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2209000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 22090000ps failed at 22090000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2209000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 22110000ps failed at 22110000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2211000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 22550000ps failed at 22550000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2255000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 22550000ps failed at 22550000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2255000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 22570000ps failed at 22570000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2257000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 22930000ps failed at 22930000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2293000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 22950000ps failed at 22950000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2295000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 22970000ps failed at 22970000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2297000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 22990000ps failed at 22990000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2299000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23010000ps failed at 23010000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2301000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23030000ps failed at 23030000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2303000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23050000ps failed at 23050000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2305000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23070000ps failed at 23070000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2307000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23090000ps failed at 23090000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2309000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23110000ps failed at 23110000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2311000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23130000ps failed at 23130000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2313000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23150000ps failed at 23150000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2315000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23170000ps failed at 23170000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2317000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23190000ps failed at 23190000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2319000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 23230000ps failed at 23230000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2323000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 23230000ps failed at 23230000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2323000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 23250000ps failed at 23250000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2325000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23450000ps failed at 23450000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2345000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23470000ps failed at 23470000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2347000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23490000ps failed at 23490000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2349000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23510000ps failed at 23510000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2351000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23530000ps failed at 23530000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2353000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23550000ps failed at 23550000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2355000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23570000ps failed at 23570000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2357000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23590000ps failed at 23590000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2359000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23610000ps failed at 23610000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2361000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23630000ps failed at 23630000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2363000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23650000ps failed at 23650000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2365000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23670000ps failed at 23670000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2367000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 23690000ps failed at 23690000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2369000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 23990000ps failed at 23990000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2399000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 23990000ps failed at 23990000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2399000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 24010000ps failed at 24010000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2401000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24050000ps failed at 24050000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2405000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24070000ps failed at 24070000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2407000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24090000ps failed at 24090000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2409000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24110000ps failed at 24110000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2411000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24130000ps failed at 24130000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2413000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24150000ps failed at 24150000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2415000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24170000ps failed at 24170000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2417000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24190000ps failed at 24190000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2419000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24210000ps failed at 24210000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2421000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24230000ps failed at 24230000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2423000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 24330000ps failed at 24330000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2433000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 24330000ps failed at 24330000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2433000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 24350000ps failed at 24350000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2435000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24370000ps failed at 24370000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2437000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24390000ps failed at 24390000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2439000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24410000ps failed at 24410000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2441000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24430000ps failed at 24430000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2443000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24450000ps failed at 24450000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2445000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24470000ps failed at 24470000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2447000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24490000ps failed at 24490000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2449000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24510000ps failed at 24510000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2451000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24530000ps failed at 24530000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2453000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 24550000ps failed at 24550000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2455000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 24790000ps failed at 24790000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2479000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 24790000ps failed at 24790000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2479000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 24810000ps failed at 24810000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2481000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25030000ps failed at 25030000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2503000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25050000ps failed at 25050000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2505000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25070000ps failed at 25070000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2507000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25090000ps failed at 25090000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2509000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25110000ps failed at 25110000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2511000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25130000ps failed at 25130000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2513000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25150000ps failed at 25150000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2515000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25170000ps failed at 25170000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2517000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25190000ps failed at 25190000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2519000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 25230000ps failed at 25230000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2523000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 25230000ps failed at 25230000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2523000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 25250000ps failed at 25250000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2525000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25270000ps failed at 25270000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2527000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25290000ps failed at 25290000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2529000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25310000ps failed at 25310000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2531000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25330000ps failed at 25330000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2533000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25350000ps failed at 25350000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2535000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25370000ps failed at 25370000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2537000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25390000ps failed at 25390000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2539000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_cs_registers.sv", 1040: core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown: started at 25410000ps failed at 25410000ps
+	Offending '(!$isunknown(csr_wdata_int))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2541000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.cs_registers_i.IbexCsrWdataIntKnown] IbexCsrWdataIntKnown: !$isunknown(csr_wdata_int) (/workspace/ibex/rtl/ibex_cs_registers.sv:1040)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 636: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid: started at 25490000ps failed at 25490000ps
+	Offending '(!$isunknown(branch_decision_i))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2549000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexBranchDecisionValid] IbexBranchDecisionValid: branch_in_dec |-> !$isunknown(branch_decision_i) (/workspace/ibex/rtl/ibex_id_stage.sv:636)
+"/workspace/ibex/rtl/ibex_load_store_unit.sv", 487: core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown: started at 25490000ps failed at 25490000ps
+	Offending '(!$isunknown(data_offset))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2549000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.load_store_unit_i.IbexDataOffsetKnown] IbexDataOffsetKnown: !$isunknown(data_offset) (/workspace/ibex/rtl/ibex_load_store_unit.sv:487)
+"/workspace/ibex/rtl/ibex_id_stage.sv", 633: core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown: started at 25510000ps failed at 25510000ps
+	Offending '(!$isunknown(id_wb_fsm_cs))'
+UVM_ERROR /workspace/ibex/shared/rtl/prim_assert.sv(21) @ 2551000: reporter [ASSERT FAILED] [core_ibex_tb_top.dut.u_ibex_core.id_stage_i.IbexWbStateKnown] IbexWbStateKnown: !$isunknown(id_wb_fsm_cs) (/workspace/ibex/rtl/ibex_id_stage.sv:633)
+UVM_INFO /workspace/ibex/dv/uvm/tests/core_ibex_test_lib.sv(18) @ 11291000: uvm_test_top [uvm_test_top] CSR test completed successfully!
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_objection.svh(1276) @ 11291000: reporter [TEST_DONE] 'run' phase is ready to proceed to the 'extract' phase
+
+--- RISC-V UVM TEST FAILED ---
+
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_report_catcher.svh(705) @ 11291000: reporter [UVM/REPORT/CATCHER] 
+--- UVM Report catcher Summary ---
+
+
+Number of demoted UVM_FATAL reports  :    0
+Number of demoted UVM_ERROR reports  :    0
+Number of demoted UVM_WARNING reports:    0
+Number of caught UVM_FATAL reports   :    0
+Number of caught UVM_ERROR reports   :    0
+Number of caught UVM_WARNING reports :    0
+
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_report_server.svh(904) @ 11291000: reporter [UVM/REPORT/SERVER] 
+--- UVM Report Summary ---
+
+** Report counts by severity
+UVM_INFO :    8
+UVM_WARNING :    0
+UVM_ERROR :  185
+UVM_FATAL :    0
+** Report counts by id
+[ASSERT FAILED]   185
+[RNTST]     1
+[TEST_DONE]     1
+[UVM/RELNOTES]     1
+[UVM/REPORT/CATCHER]     1
+[uvm_test_top]     2
+[uvm_test_top.env.data_if_slave_agent.sequencer.data_intf_seq]     1
+[uvm_test_top.env.instr_if_slave_agent.sequencer.instr_intf_seq]     1
+
+$finish called from file "$VCS_HOME/etc/uvm-1.2/base/uvm_root.svh", line 527.
+$finish at simulation time             11291000
+           V C S   S i m u l a t i o n   R e p o r t 
+Time: 112910000 ps
+CPU Time:      0.770 seconds;       Data structure size:   0.8Mb
+Thu Mar 19 00:21:57 2026

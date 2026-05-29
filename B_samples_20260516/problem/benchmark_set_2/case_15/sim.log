@@ -1,0 +1,103 @@
+Command: /workspace/ibex/dv/uvm/out/rtl_sim/vcs_simv +vcs+lic+wait +signature_addr=0x8ffffffc -ucli -do /workspace/ibex/dv/uvm/vcs.tcl +ntb_random_seed=7 +UVM_TESTNAME=core_ibex_base_test +bin=/workspace/ibex/dv/uvm/out/instr_gen/asm_tests/riscv_user_mode_rand_test_0.bin -l sim.log +UVM_VERBOSITY=UVM_MEDIUM
+Chronologic VCS simulator copyright 1991-2023
+Contains Synopsys proprietary information.
+Compiler version VERSION; Runtime version VERSION;  Mar 20 06:05 2026
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_root.svh(402) @ 0: reporter [UVM/RELNOTES] 
+----------------------------------------------------------------
+UVM-1.2.Synopsys
+(C) 2007-2014 Mentor Graphics Corporation
+(C) 2007-2014 Cadence Design Systems, Inc.
+(C) 2006-2014 Synopsys, Inc.
+(C) 2011-2013 Cypress Semiconductor Corp.
+(C) 2013-2014 NVIDIA Corporation
+----------------------------------------------------------------
+
+  ***********       IMPORTANT RELEASE NOTES         ************
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_NO_DEPRECATED undefined.
+  See http://www.eda.org/svdb/view.php?id=3313 for more details.
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR undefined.
+  See http://www.eda.org/svdb/view.php?id=3770 for more details.
+
+      (Specify +UVM_NO_RELNOTES to turn off this notice)
+
+ucli% # TCL file invoked from VCS's simv at run-time using this: -ucli -do <this file>
+ucli% # Syntax: fsdbDumpfile FSDB_Name [Limit_Size]
+ucli% fsdbDumpfile "waves.fsdb"
+*Verdi* Loading libsscore_vcs202303.so
+FSDB Dumper for VCS, Release Verdi_VERSION-T-20260213, Linux x86_64/64bit, 03/19/2026
+(C) 1996 - 2026 by Synopsys, Inc.
+*Verdi* : Create FSDB file 'waves.fsdb'
+ucli% # Syntax: fsdbDumpvars [depth] [instance] [option]*
+ucli% ##############################################################################
+ucli% # Option                     Description
+ucli% ##############################################################################
+ucli% # +mda                       Dumps memory and MDA signals in all scopes.
+ucli% # +packedmda                 Dumps packed signals
+ucli% # +struct                    Dumps structs
+ucli% # +skip_cell_instance=mode  Enables or disables cell dumping
+ucli% # +strength                  Enables strength dumping
+ucli% # +parameter                 Dumps parameters
+ucli% # +power                     Dumps power-related signals
+ucli% # +trace_process             Dumps VHDL processes
+ucli% # +no_functions              Disables dumping of functions
+ucli% # +sva                       Dumps assertions
+ucli% # +Reg_Only                  Dumps only reg type signals
+ucli% # +IO_Only                   Dumps only IO port signals
+ucli% # +by_file=<filename>        File to specify objects to add
+ucli% # +all                       Dumps memories, MDA signals, structs, unions,power, and packed structs
+ucli% fsdbDumpvars 0 core_ibex_tb_top +all
+*Verdi* : Begin traversing the scope (core_ibex_tb_top), layer (0).
+*Verdi* : Enable +all dumping.
+*Verdi* : End of traversing.
+ucli% fsdbDumpSVA 0 core_ibex_tb_top.dut
+*Verdi* : Begin traversing the SVA assertions under scope (core_ibex_tb_top.dut), layer (0).
+*Verdi* : End of traversing the SVA assertions.
+ucli% run
+UVM_INFO @ 0: reporter [RNTST] Running test core_ibex_base_test...
+UVM_INFO /workspace/ibex/dv/uvm/tests/core_ibex_base_test.sv(98) @ 199000: uvm_test_top [uvm_test_top] Running test : /workspace/ibex/dv/uvm/out/instr_gen/asm_tests/riscv_user_mode_rand_test_0.bin
+UVM_INFO /workspace/ibex/dv/uvm/common/ibex_mem_intf_agent/ibex_mem_intf_slave_seq_lib.sv(28) @ 199000: uvm_test_top.env.instr_if_slave_agent.sequencer@@instr_intf_seq [uvm_test_top.env.instr_if_slave_agent.sequencer.instr_intf_seq] is_dmem_seq: 0x0
+UVM_INFO /workspace/ibex/dv/uvm/common/ibex_mem_intf_agent/ibex_mem_intf_slave_seq_lib.sv(28) @ 199000: uvm_test_top.env.data_if_slave_agent.sequencer@@data_intf_seq [uvm_test_top.env.data_if_slave_agent.sequencer.data_intf_seq] is_dmem_seq: 0x1
+core_ibex_tb_top.dut.u_ibex_tracer.printbuffer_dumpline.unnamed$$_0: Writing execution trace to trace_core_00000000.log
+UVM_INFO /workspace/ibex/dv/uvm/tests/core_ibex_base_test.sv(114) @ 112557000: uvm_test_top [uvm_test_top] ECALL instruction is detected, test done
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_objection.svh(1276) @ 118555000: reporter [TEST_DONE] 'run' phase is ready to proceed to the 'extract' phase
+
+--- RISC-V UVM TEST PASSED ---
+
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_report_catcher.svh(705) @ 118555000: reporter [UVM/REPORT/CATCHER] 
+--- UVM Report catcher Summary ---
+
+
+Number of demoted UVM_FATAL reports  :    0
+Number of demoted UVM_ERROR reports  :    0
+Number of demoted UVM_WARNING reports:    0
+Number of caught UVM_FATAL reports   :    0
+Number of caught UVM_ERROR reports   :    0
+Number of caught UVM_WARNING reports :    0
+
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_report_server.svh(904) @ 118555000: reporter [UVM/REPORT/SERVER] 
+--- UVM Report Summary ---
+
+** Report counts by severity
+UVM_INFO :    8
+UVM_WARNING :    0
+UVM_ERROR :    0
+UVM_FATAL :    0
+** Report counts by id
+[RNTST]     1
+[TEST_DONE]     1
+[UVM/RELNOTES]     1
+[UVM/REPORT/CATCHER]     1
+[uvm_test_top]     2
+[uvm_test_top.env.data_if_slave_agent.sequencer.data_intf_seq]     1
+[uvm_test_top.env.instr_if_slave_agent.sequencer.instr_intf_seq]     1
+
+$finish called from file "$VCS_HOME/etc/uvm-1.2/base/uvm_root.svh", line 527.
+$finish at simulation time            118555000
+           V C S   S i m u l a t i o n   R e p o r t 
+Time: 1185550000 ps
+CPU Time:      4.930 seconds;       Data structure size:   0.8Mb
+Fri Mar 20 06:05:51 2026

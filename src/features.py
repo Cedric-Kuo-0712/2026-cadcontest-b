@@ -5,9 +5,9 @@ for TF-IDF / agglomerative clustering.
 
 Routing policy
 --------------
-* ``regr.log`` with ``Mismatch[N]:``  →  features from ``trace.log``, plus the
-  first mismatch line from ``regr.log`` and trace instructions surrounding
-  that retire index.
+* ``regr.log`` with ``Mismatch[N]:``  →  features from ``trace.log`` at and after
+  the first mismatch retire index (pre-mismatch trace is ignored), plus the
+  mismatch block from ``regr.log`` and a short post-mismatch context window.
 * otherwise                           →  features from ``sim.log`` + ``regr.log``.
 """
 
@@ -381,8 +381,11 @@ def extract_trace(
     mismatch_retire_index: int = 0,
     context: int = _MISMATCH_CONTEXT,
 ) -> dict:
-    """Stream trace.log; always compute tail stats, optionally capture context
-    around ``mismatch_retire_index`` (1-based, matching ``ibex[N]`` in regr.log).
+    """Stream trace.log.
+
+    When ``mismatch_retire_index`` > 0 (from regr.log ``ibex[N]``), only
+    instructions at and after that retire index are used for tail/loop stats;
+    everything before the mismatch is ignored.
     """
     result = {
         "mnemonics": (),
@@ -398,13 +401,14 @@ def extract_trace(
         "has_signature_loop": False,
     }
     window: deque[tuple[str, str]] = deque(maxlen=tail)
-    before: deque[str] = deque(maxlen=context)
     at_mismatch: str = ""
     after: list[str] = []
     capturing_after = False
     after_remaining = 0
-    total = 0
+    retire_count = 0
+    post_mismatch_count = 0
     target = mismatch_retire_index
+    from_mismatch_only = target > 0
 
     try:
         with open_log(path) as f:
@@ -412,22 +416,25 @@ def extract_trace(
                 m = _RE_TRACE_LINE.match(line)
                 if not m:
                     continue
-                total += 1
+                retire_count += 1
                 mnem = m.group(5)
-                window.append((m.group(3).lower(), mnem))
+                pc = m.group(3).lower()
 
-                if target <= 0:
-                    continue
+                if from_mismatch_only:
+                    if retire_count < target:
+                        continue
+                    if retire_count == target:
+                        at_mismatch = mnem
+                        capturing_after = True
+                        after_remaining = context
+                    elif capturing_after and after_remaining > 0:
+                        after.append(mnem)
+                        after_remaining -= 1
 
-                if total < target:
-                    before.append(mnem)
-                elif total == target:
-                    at_mismatch = mnem
-                    capturing_after = True
-                    after_remaining = context
-                elif capturing_after and after_remaining > 0:
-                    after.append(mnem)
-                    after_remaining -= 1
+                    post_mismatch_count += 1
+                    window.append((pc, mnem))
+                else:
+                    window.append((pc, mnem))
     except OSError:
         return result
 
@@ -437,9 +444,10 @@ def extract_trace(
     pcs = [pc for pc, _ in window]
     mnems = [mn for _, mn in window]
     unique_pcs = len(set(pcs))
-    result["total"] = total
+    trace_total = post_mismatch_count if from_mismatch_only else retire_count
+    result["total"] = trace_total
     result["unique_pcs"] = unique_pcs
-    result["length_bucket"] = _length_bucket(total)
+    result["length_bucket"] = _length_bucket(trace_total)
     result["has_repeating_tail"] = (
         len(window) >= 10 and unique_pcs <= max(2, len(window) // 4)
     )
@@ -450,8 +458,8 @@ def extract_trace(
     counts = Counter(mnems[-16:])
     result["tail_uniformity"] = counts.most_common(1)[0][1] / max(len(mnems[-16:]), 1)
 
-    if target > 0 and at_mismatch:
-        ctx = list(before) + [at_mismatch] + after
+    if from_mismatch_only and at_mismatch:
+        ctx = [at_mismatch] + after
         result["mismatch_context_mnemonics"] = tuple(ctx)
         result["mismatch_context_text"] = " ".join(ctx)
 

@@ -1,0 +1,415 @@
+Command: /workspace/ibex/dv/uvm/out/rtl_sim/vcs_simv +vcs+lic+wait +signature_addr=0x8ffffffc -ucli -do /workspace/ibex/dv/uvm/vcs.tcl +ntb_random_seed=7 +require_signature_addr=1 +UVM_TESTNAME=core_ibex_dret_test +bin=/workspace/ibex/dv/uvm/out/instr_gen/asm_tests/riscv_dret_test_0.bin -l sim.log +UVM_VERBOSITY=UVM_MEDIUM
+Chronologic VCS simulator copyright 1991-2023
+Contains Synopsys proprietary information.
+Compiler version VERSION; Runtime version VERSION;  Mar 20 05:49 2026
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_root.svh(402) @ 0: reporter [UVM/RELNOTES] 
+----------------------------------------------------------------
+UVM-1.2.Synopsys
+(C) 2007-2014 Mentor Graphics Corporation
+(C) 2007-2014 Cadence Design Systems, Inc.
+(C) 2006-2014 Synopsys, Inc.
+(C) 2011-2013 Cypress Semiconductor Corp.
+(C) 2013-2014 NVIDIA Corporation
+----------------------------------------------------------------
+
+  ***********       IMPORTANT RELEASE NOTES         ************
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_NO_DEPRECATED undefined.
+  See http://www.eda.org/svdb/view.php?id=3313 for more details.
+
+  You are using a version of the UVM library that has been compiled
+  with `UVM_OBJECT_DO_NOT_NEED_CONSTRUCTOR undefined.
+  See http://www.eda.org/svdb/view.php?id=3770 for more details.
+
+      (Specify +UVM_NO_RELNOTES to turn off this notice)
+
+ucli% # TCL file invoked from VCS's simv at run-time using this: -ucli -do <this file>
+ucli% # Syntax: fsdbDumpfile FSDB_Name [Limit_Size]
+ucli% fsdbDumpfile "waves.fsdb"
+*Verdi* Loading libsscore_vcs202303.so
+FSDB Dumper for VCS, Release Verdi_VERSION-T-20260213, Linux x86_64/64bit, 03/19/2026
+(C) 1996 - 2026 by Synopsys, Inc.
+*Verdi* : Create FSDB file 'waves.fsdb'
+ucli% # Syntax: fsdbDumpvars [depth] [instance] [option]*
+ucli% ##############################################################################
+ucli% # Option                     Description
+ucli% ##############################################################################
+ucli% # +mda                       Dumps memory and MDA signals in all scopes.
+ucli% # +packedmda                 Dumps packed signals
+ucli% # +struct                    Dumps structs
+ucli% # +skip_cell_instance=mode  Enables or disables cell dumping
+ucli% # +strength                  Enables strength dumping
+ucli% # +parameter                 Dumps parameters
+ucli% # +power                     Dumps power-related signals
+ucli% # +trace_process             Dumps VHDL processes
+ucli% # +no_functions              Disables dumping of functions
+ucli% # +sva                       Dumps assertions
+ucli% # +Reg_Only                  Dumps only reg type signals
+ucli% # +IO_Only                   Dumps only IO port signals
+ucli% # +by_file=<filename>        File to specify objects to add
+ucli% # +all                       Dumps memories, MDA signals, structs, unions,power, and packed structs
+ucli% fsdbDumpvars 0 core_ibex_tb_top +all
+*Verdi* : Begin traversing the scope (core_ibex_tb_top), layer (0).
+*Verdi* : Enable +all dumping.
+*Verdi* : End of traversing.
+ucli% fsdbDumpSVA 0 core_ibex_tb_top.dut
+*Verdi* : Begin traversing the SVA assertions under scope (core_ibex_tb_top.dut), layer (0).
+*Verdi* : End of traversing the SVA assertions.
+ucli% run
+UVM_INFO @ 0: reporter [RNTST] Running test core_ibex_dret_test...
+UVM_INFO /workspace/ibex/dv/uvm/tests/core_ibex_base_test.sv(98) @ 199000: uvm_test_top [uvm_test_top] Running test : /workspace/ibex/dv/uvm/out/instr_gen/asm_tests/riscv_dret_test_0.bin
+UVM_INFO /workspace/ibex/dv/uvm/common/ibex_mem_intf_agent/ibex_mem_intf_slave_seq_lib.sv(28) @ 199000: uvm_test_top.env.instr_if_slave_agent.sequencer@@instr_intf_seq [uvm_test_top.env.instr_if_slave_agent.sequencer.instr_intf_seq] is_dmem_seq: 0x0
+UVM_INFO /workspace/ibex/dv/uvm/common/ibex_mem_intf_agent/ibex_mem_intf_slave_seq_lib.sv(28) @ 199000: uvm_test_top.env.data_if_slave_agent.sequencer@@data_intf_seq [uvm_test_top.env.data_if_slave_agent.sequencer.data_intf_seq] is_dmem_seq: 0x1
+core_ibex_tb_top.dut.u_ibex_tracer.printbuffer_dumpline.unnamed$$_0: Writing execution trace to trace_core_00000000.log
+            10512000: Illegal instruction (hart 0) at PC 0x800005a4: 0x7b200073
+            15396000: Illegal instruction (hart 0) at PC 0x800006e0: 0x7b200073
+            24106000: Illegal instruction (hart 0) at PC 0x80000a6e: 0x7b200073
+            28788000: Illegal instruction (hart 0) at PC 0x80000d04: 0x7b200073
+            31606000: Illegal instruction (hart 0) at PC 0x80000d3e: 0x7b200073
+            36904000: Illegal instruction (hart 0) at PC 0x800010ba: 0x7b200073
+            47650000: Illegal instruction (hart 0) at PC 0x8000ee1c: 0x7b200073
+            51090000: Illegal instruction (hart 0) at PC 0x8000eede: 0x7b200073
+            54612000: Illegal instruction (hart 0) at PC 0x8000f01c: 0x7b200073
+            57756000: Illegal instruction (hart 0) at PC 0x8000f094: 0x7b200073
+            61408000: Illegal instruction (hart 0) at PC 0x8000f1f8: 0x7b200073
+            64372000: Illegal instruction (hart 0) at PC 0x8000f228: 0x7b200073
+            67682000: Illegal instruction (hart 0) at PC 0x8000f2a8: 0x7b200073
+            72658000: Illegal instruction (hart 0) at PC 0x80001486: 0x7b200073
+            76028000: Illegal instruction (hart 0) at PC 0x8000151e: 0x7b200073
+            81032000: Illegal instruction (hart 0) at PC 0x800016e6: 0x7b200073
+            90144000: Illegal instruction (hart 0) at PC 0x80001a70: 0x7b200073
+            92918000: Illegal instruction (hart 0) at PC 0x80001a78: 0x7b200073
+           101390000: Illegal instruction (hart 0) at PC 0x80001d50: 0x7b200073
+           106216000: Illegal instruction (hart 0) at PC 0x80001ef4: 0x7b200073
+           112286000: Illegal instruction (hart 0) at PC 0x800020bc: 0x7b200073
+           119668000: Illegal instruction (hart 0) at PC 0x8000238c: 0x7b200073
+           123200000: Illegal instruction (hart 0) at PC 0x800023f8: 0x7b200073
+           134508000: Illegal instruction (hart 0) at PC 0x800028ee: 0x7b200073
+           137184000: Illegal instruction (hart 0) at PC 0x8000290a: 0x7b200073
+           139612000: Illegal instruction (hart 0) at PC 0x8000290e: 0x7b200073
+           143788000: Illegal instruction (hart 0) at PC 0x80002a08: 0x7b200073
+           155672000: Illegal instruction (hart 0) at PC 0x80002fcc: 0x7b200073
+           159146000: Illegal instruction (hart 0) at PC 0x80003022: 0x7b200073
+           176090000: Illegal instruction (hart 0) at PC 0x800037a2: 0x7b200073
+           182152000: Illegal instruction (hart 0) at PC 0x80003992: 0x7b200073
+           187088000: Illegal instruction (hart 0) at PC 0x80003b4e: 0x7b200073
+           199472000: Illegal instruction (hart 0) at PC 0x8000417c: 0x7b200073
+           208232000: Illegal instruction (hart 0) at PC 0x80004560: 0x7b200073
+           224174000: Illegal instruction (hart 0) at PC 0x80004d1e: 0x7b200073
+           233404000: Illegal instruction (hart 0) at PC 0x800050ce: 0x7b200073
+           251012000: Illegal instruction (hart 0) at PC 0x80005906: 0x7b200073
+           253794000: Illegal instruction (hart 0) at PC 0x80005952: 0x7b200073
+           256612000: Illegal instruction (hart 0) at PC 0x80005952: 0x7b200073
+           259660000: Illegal instruction (hart 0) at PC 0x80005952: 0x7b200073
+           273006000: Illegal instruction (hart 0) at PC 0x80005f86: 0x7b200073
+           281746000: Illegal instruction (hart 0) at PC 0x80006368: 0x7b200073
+           284480000: Illegal instruction (hart 0) at PC 0x80006374: 0x7b200073
+           289788000: Illegal instruction (hart 0) at PC 0x8000650c: 0x7b200073
+           297512000: Illegal instruction (hart 0) at PC 0x8000678a: 0x7b200073
+           304598000: Illegal instruction (hart 0) at PC 0x800069da: 0x7b200073
+           316044000: Illegal instruction (hart 0) at PC 0x80006dd2: 0x7b200073
+           321362000: Illegal instruction (hart 0) at PC 0x80006f82: 0x7b200073
+           329464000: Illegal instruction (hart 0) at PC 0x800072b8: 0x7b200073
+           332868000: Illegal instruction (hart 0) at PC 0x80007310: 0x7b200073
+           338270000: Illegal instruction (hart 0) at PC 0x8000753e: 0x7b200073
+           342084000: Illegal instruction (hart 0) at PC 0x80007620: 0x7b200073
+           346538000: Illegal instruction (hart 0) at PC 0x80007886: 0x7b200073
+           351098000: Illegal instruction (hart 0) at PC 0x80007b2c: 0x7b200073
+           354418000: Illegal instruction (hart 0) at PC 0x80007baa: 0x7b200073
+           357972000: Illegal instruction (hart 0) at PC 0x80007c62: 0x7b200073
+           363090000: Illegal instruction (hart 0) at PC 0x80007f04: 0x7b200073
+           366814000: Illegal instruction (hart 0) at PC 0x80007fe4: 0x7b200073
+           371936000: Illegal instruction (hart 0) at PC 0x80008216: 0x7b200073
+           376054000: Illegal instruction (hart 0) at PC 0x80008406: 0x7b200073
+           379082000: Illegal instruction (hart 0) at PC 0x800084b4: 0x7b200073
+           384218000: Illegal instruction (hart 0) at PC 0x800087c4: 0x7b200073
+           387720000: Illegal instruction (hart 0) at PC 0x800088a6: 0x7b200073
+           392370000: Illegal instruction (hart 0) at PC 0x80008ada: 0x7b200073
+           395502000: Illegal instruction (hart 0) at PC 0x80008b3e: 0x7b200073
+           398404000: Illegal instruction (hart 0) at PC 0x80008b7c: 0x7b200073
+           401984000: Illegal instruction (hart 0) at PC 0x80008c4c: 0x7b200073
+           404662000: Illegal instruction (hart 0) at PC 0x80008c62: 0x7b200073
+           407702000: Illegal instruction (hart 0) at PC 0x80008c74: 0x7b200073
+           411164000: Illegal instruction (hart 0) at PC 0x80008d50: 0x7b200073
+           414188000: Illegal instruction (hart 0) at PC 0x80008d9a: 0x7b200073
+           417668000: Illegal instruction (hart 0) at PC 0x80008e4e: 0x7b200073
+           420438000: Illegal instruction (hart 0) at PC 0x80008e64: 0x7b200073
+           426310000: Illegal instruction (hart 0) at PC 0x8000924a: 0x7b200073
+           429244000: Illegal instruction (hart 0) at PC 0x800092cc: 0x7b200073
+           431998000: Illegal instruction (hart 0) at PC 0x800092d6: 0x7b200073
+           434238000: Illegal instruction (hart 0) at PC 0x800092da: 0x7b200073
+           438286000: Illegal instruction (hart 0) at PC 0x8000944a: 0x7b200073
+           442290000: Illegal instruction (hart 0) at PC 0x8000955c: 0x7b200073
+           445258000: Illegal instruction (hart 0) at PC 0x80009660: 0x7b200073
+           449284000: Illegal instruction (hart 0) at PC 0x800097d8: 0x7b200073
+           453054000: Illegal instruction (hart 0) at PC 0x800098f2: 0x7b200073
+           455988000: Illegal instruction (hart 0) at PC 0x8000990e: 0x7b200073
+           458874000: Illegal instruction (hart 0) at PC 0x80009930: 0x7b200073
+           462930000: Illegal instruction (hart 0) at PC 0x80009a74: 0x7b200073
+           467920000: Illegal instruction (hart 0) at PC 0x80009bdc: 0x7b200073
+           471312000: Illegal instruction (hart 0) at PC 0x80009c8c: 0x7b200073
+           475734000: Illegal instruction (hart 0) at PC 0x80009ee4: 0x7b200073
+           478962000: Illegal instruction (hart 0) at PC 0x80009f44: 0x7b200073
+           482262000: Illegal instruction (hart 0) at PC 0x80009fd0: 0x7b200073
+           486874000: Illegal instruction (hart 0) at PC 0x8000a24a: 0x7b200073
+           489842000: Illegal instruction (hart 0) at PC 0x8000a2e4: 0x7b200073
+           493108000: Illegal instruction (hart 0) at PC 0x8000a33a: 0x7b200073
+           496844000: Illegal instruction (hart 0) at PC 0x8000a4a2: 0x7b200073
+           499990000: Illegal instruction (hart 0) at PC 0x8000a528: 0x7b200073
+           503050000: Illegal instruction (hart 0) at PC 0x8000a564: 0x7b200073
+           505490000: Illegal instruction (hart 0) at PC 0x8000a578: 0x7b200073
+           507966000: Illegal instruction (hart 0) at PC 0x8000a588: 0x7b200073
+           512286000: Illegal instruction (hart 0) at PC 0x8000a738: 0x7b200073
+           516234000: Illegal instruction (hart 0) at PC 0x8000a7fa: 0x7b200073
+           519628000: Illegal instruction (hart 0) at PC 0x8000a97e: 0x7b200073
+           522764000: Illegal instruction (hart 0) at PC 0x8000aa2e: 0x7b200073
+           525378000: Illegal instruction (hart 0) at PC 0x8000aa4a: 0x7b200073
+           528372000: Illegal instruction (hart 0) at PC 0x8000aab0: 0x7b200073
+           531966000: Illegal instruction (hart 0) at PC 0x8000ab70: 0x7b200073
+           535114000: Illegal instruction (hart 0) at PC 0x8000abd6: 0x7b200073
+           538912000: Illegal instruction (hart 0) at PC 0x8000ad5c: 0x7b200073
+           542534000: Illegal instruction (hart 0) at PC 0x8000ae7e: 0x7b200073
+           549214000: Illegal instruction (hart 0) at PC 0x8000b1aa: 0x7b200073
+           552760000: Illegal instruction (hart 0) at PC 0x8000b2d6: 0x7b200073
+           555586000: Illegal instruction (hart 0) at PC 0x8000b2f0: 0x7b200073
+           559112000: Illegal instruction (hart 0) at PC 0x8000b376: 0x7b200073
+           561740000: Illegal instruction (hart 0) at PC 0x8000b38e: 0x7b200073
+           565012000: Illegal instruction (hart 0) at PC 0x8000b454: 0x7b200073
+           569596000: Illegal instruction (hart 0) at PC 0x8000b614: 0x7b200073
+           575494000: Illegal instruction (hart 0) at PC 0x8000b962: 0x7b200073
+           578478000: Illegal instruction (hart 0) at PC 0x8000b98c: 0x7b200073
+           581852000: Illegal instruction (hart 0) at PC 0x8000ba3e: 0x7b200073
+           584420000: Illegal instruction (hart 0) at PC 0x8000ba4e: 0x7b200073
+           587934000: Illegal instruction (hart 0) at PC 0x8000bb9e: 0x7b200073
+           590916000: Illegal instruction (hart 0) at PC 0x8000bc14: 0x7b200073
+           594140000: Illegal instruction (hart 0) at PC 0x8000bce8: 0x7b200073
+           599686000: Illegal instruction (hart 0) at PC 0x8000c010: 0x7b200073
+           603762000: Illegal instruction (hart 0) at PC 0x8000c180: 0x7b200073
+           608450000: Illegal instruction (hart 0) at PC 0x8000c35e: 0x7b200073
+           612378000: Illegal instruction (hart 0) at PC 0x8000c484: 0x7b200073
+           615818000: Illegal instruction (hart 0) at PC 0x8000c51e: 0x7b200073
+           618416000: Illegal instruction (hart 0) at PC 0x8000c566: 0x7b200073
+           621588000: Illegal instruction (hart 0) at PC 0x8000c5cc: 0x7b200073
+           625308000: Illegal instruction (hart 0) at PC 0x8000c742: 0x7b200073
+           628254000: Illegal instruction (hart 0) at PC 0x8000c7d2: 0x7b200073
+           631448000: Illegal instruction (hart 0) at PC 0x8000c8c6: 0x7b200073
+           634818000: Illegal instruction (hart 0) at PC 0x8000c99e: 0x7b200073
+           638978000: Illegal instruction (hart 0) at PC 0x8000cae6: 0x7b200073
+           643028000: Illegal instruction (hart 0) at PC 0x8000cc08: 0x7b200073
+           645924000: Illegal instruction (hart 0) at PC 0x8000cc5a: 0x7b200073
+           649520000: Illegal instruction (hart 0) at PC 0x8000cdd4: 0x7b200073
+           653410000: Illegal instruction (hart 0) at PC 0x8000cf2e: 0x7b200073
+           657138000: Illegal instruction (hart 0) at PC 0x8000d042: 0x7b200073
+           659790000: Illegal instruction (hart 0) at PC 0x8000d09c: 0x7b200073
+           662674000: Illegal instruction (hart 0) at PC 0x8000d0fa: 0x7b200073
+           667464000: Illegal instruction (hart 0) at PC 0x8000d270: 0x7b200073
+           670554000: Illegal instruction (hart 0) at PC 0x8000d2d6: 0x7b200073
+           673548000: Illegal instruction (hart 0) at PC 0x8000d31a: 0x7b200073
+           678588000: Illegal instruction (hart 0) at PC 0x8000d686: 0x7b200073
+           682486000: Illegal instruction (hart 0) at PC 0x8000d79a: 0x7b200073
+           686432000: Illegal instruction (hart 0) at PC 0x8000d934: 0x7b200073
+           689450000: Illegal instruction (hart 0) at PC 0x8000d978: 0x7b200073
+           695508000: Illegal instruction (hart 0) at PC 0x8000f846: 0x7b200073
+           698568000: Illegal instruction (hart 0) at PC 0x8000dada: 0x7b200073
+           703240000: Illegal instruction (hart 0) at PC 0x8000dda2: 0x7b200073
+           706762000: Illegal instruction (hart 0) at PC 0x8000de3e: 0x7b200073
+           709674000: Illegal instruction (hart 0) at PC 0x8000de56: 0x7b200073
+           712948000: Illegal instruction (hart 0) at PC 0x8000df80: 0x7b200073
+           716426000: Illegal instruction (hart 0) at PC 0x8000e082: 0x7b200073
+           719202000: Illegal instruction (hart 0) at PC 0x8000e106: 0x7b200073
+           723164000: Illegal instruction (hart 0) at PC 0x8000e230: 0x7b200073
+           725916000: Illegal instruction (hart 0) at PC 0x8000e27e: 0x7b200073
+           729948000: Illegal instruction (hart 0) at PC 0x8000e43c: 0x7b200073
+           733120000: Illegal instruction (hart 0) at PC 0x8000e50c: 0x7b200073
+           735968000: Illegal instruction (hart 0) at PC 0x8000e540: 0x7b200073
+           739032000: Illegal instruction (hart 0) at PC 0x8000e580: 0x7b200073
+           741758000: Illegal instruction (hart 0) at PC 0x8000e594: 0x7b200073
+           751130000: Illegal instruction (hart 0) at PC 0x80001486: 0x7b200073
+           754346000: Illegal instruction (hart 0) at PC 0x8000151e: 0x7b200073
+           759494000: Illegal instruction (hart 0) at PC 0x800016e6: 0x7b200073
+           768236000: Illegal instruction (hart 0) at PC 0x80001a70: 0x7b200073
+           770898000: Illegal instruction (hart 0) at PC 0x80001a78: 0x7b200073
+           779380000: Illegal instruction (hart 0) at PC 0x80001d50: 0x7b200073
+           784524000: Illegal instruction (hart 0) at PC 0x80001ef4: 0x7b200073
+           790418000: Illegal instruction (hart 0) at PC 0x800020bc: 0x7b200073
+           797744000: Illegal instruction (hart 0) at PC 0x8000238c: 0x7b200073
+           800944000: Illegal instruction (hart 0) at PC 0x800023f8: 0x7b200073
+           812836000: Illegal instruction (hart 0) at PC 0x800028ee: 0x7b200073
+           815718000: Illegal instruction (hart 0) at PC 0x8000290a: 0x7b200073
+           818500000: Illegal instruction (hart 0) at PC 0x8000290e: 0x7b200073
+           822716000: Illegal instruction (hart 0) at PC 0x80002a08: 0x7b200073
+           835066000: Illegal instruction (hart 0) at PC 0x80002fcc: 0x7b200073
+           838408000: Illegal instruction (hart 0) at PC 0x80003022: 0x7b200073
+           856426000: Illegal instruction (hart 0) at PC 0x800037a2: 0x7b200073
+           862384000: Illegal instruction (hart 0) at PC 0x80003992: 0x7b200073
+           867900000: Illegal instruction (hart 0) at PC 0x80003b4e: 0x7b200073
+           880120000: Illegal instruction (hart 0) at PC 0x8000417c: 0x7b200073
+           889366000: Illegal instruction (hart 0) at PC 0x80004560: 0x7b200073
+           905234000: Illegal instruction (hart 0) at PC 0x80004d1e: 0x7b200073
+           914542000: Illegal instruction (hart 0) at PC 0x800050ce: 0x7b200073
+           932530000: Illegal instruction (hart 0) at PC 0x80005906: 0x7b200073
+           935354000: Illegal instruction (hart 0) at PC 0x80005952: 0x7b200073
+           938352000: Illegal instruction (hart 0) at PC 0x80005952: 0x7b200073
+           941554000: Illegal instruction (hart 0) at PC 0x80005952: 0x7b200073
+           954778000: Illegal instruction (hart 0) at PC 0x80005f86: 0x7b200073
+           963874000: Illegal instruction (hart 0) at PC 0x80006368: 0x7b200073
+           966392000: Illegal instruction (hart 0) at PC 0x80006374: 0x7b200073
+           971826000: Illegal instruction (hart 0) at PC 0x8000650c: 0x7b200073
+           979150000: Illegal instruction (hart 0) at PC 0x8000678a: 0x7b200073
+           986308000: Illegal instruction (hart 0) at PC 0x800069da: 0x7b200073
+           997356000: Illegal instruction (hart 0) at PC 0x80006dd2: 0x7b200073
+          1003220000: Illegal instruction (hart 0) at PC 0x80006f82: 0x7b200073
+          1011356000: Illegal instruction (hart 0) at PC 0x800072b8: 0x7b200073
+          1014508000: Illegal instruction (hart 0) at PC 0x80007310: 0x7b200073
+          1019360000: Illegal instruction (hart 0) at PC 0x8000753e: 0x7b200073
+          1022954000: Illegal instruction (hart 0) at PC 0x80007620: 0x7b200073
+          1026976000: Illegal instruction (hart 0) at PC 0x80007886: 0x7b200073
+          1031894000: Illegal instruction (hart 0) at PC 0x80007b2c: 0x7b200073
+          1035402000: Illegal instruction (hart 0) at PC 0x80007baa: 0x7b200073
+          1038896000: Illegal instruction (hart 0) at PC 0x80007c62: 0x7b200073
+          1043944000: Illegal instruction (hart 0) at PC 0x80007f04: 0x7b200073
+          1047388000: Illegal instruction (hart 0) at PC 0x80007fe4: 0x7b200073
+          1052874000: Illegal instruction (hart 0) at PC 0x80008216: 0x7b200073
+          1057042000: Illegal instruction (hart 0) at PC 0x80008406: 0x7b200073
+          1060104000: Illegal instruction (hart 0) at PC 0x800084b4: 0x7b200073
+          1065250000: Illegal instruction (hart 0) at PC 0x800087c4: 0x7b200073
+          1068570000: Illegal instruction (hart 0) at PC 0x800088a6: 0x7b200073
+          1072960000: Illegal instruction (hart 0) at PC 0x80008ada: 0x7b200073
+          1076166000: Illegal instruction (hart 0) at PC 0x80008b3e: 0x7b200073
+          1078984000: Illegal instruction (hart 0) at PC 0x80008b7c: 0x7b200073
+          1082418000: Illegal instruction (hart 0) at PC 0x80008c4c: 0x7b200073
+          1085072000: Illegal instruction (hart 0) at PC 0x80008c62: 0x7b200073
+          1087790000: Illegal instruction (hart 0) at PC 0x80008c74: 0x7b200073
+          1090850000: Illegal instruction (hart 0) at PC 0x80008d50: 0x7b200073
+          1093696000: Illegal instruction (hart 0) at PC 0x80008d9a: 0x7b200073
+          1097352000: Illegal instruction (hart 0) at PC 0x80008e4e: 0x7b200073
+          1100106000: Illegal instruction (hart 0) at PC 0x80008e64: 0x7b200073
+          1106076000: Illegal instruction (hart 0) at PC 0x8000924a: 0x7b200073
+          1109488000: Illegal instruction (hart 0) at PC 0x800092cc: 0x7b200073
+          1112390000: Illegal instruction (hart 0) at PC 0x800092d6: 0x7b200073
+          1115128000: Illegal instruction (hart 0) at PC 0x800092da: 0x7b200073
+          1118920000: Illegal instruction (hart 0) at PC 0x8000944a: 0x7b200073
+          1122758000: Illegal instruction (hart 0) at PC 0x8000955c: 0x7b200073
+          1125770000: Illegal instruction (hart 0) at PC 0x80009660: 0x7b200073
+          1130070000: Illegal instruction (hart 0) at PC 0x800097d8: 0x7b200073
+          1133496000: Illegal instruction (hart 0) at PC 0x800098f2: 0x7b200073
+          1136350000: Illegal instruction (hart 0) at PC 0x8000990e: 0x7b200073
+          1139314000: Illegal instruction (hart 0) at PC 0x80009930: 0x7b200073
+          1143342000: Illegal instruction (hart 0) at PC 0x80009a74: 0x7b200073
+          1148044000: Illegal instruction (hart 0) at PC 0x80009bdc: 0x7b200073
+          1151164000: Illegal instruction (hart 0) at PC 0x80009c8c: 0x7b200073
+          1155964000: Illegal instruction (hart 0) at PC 0x80009ee4: 0x7b200073
+          1159302000: Illegal instruction (hart 0) at PC 0x80009f44: 0x7b200073
+          1162596000: Illegal instruction (hart 0) at PC 0x80009fd0: 0x7b200073
+          1167186000: Illegal instruction (hart 0) at PC 0x8000a24a: 0x7b200073
+          1170594000: Illegal instruction (hart 0) at PC 0x8000a2e4: 0x7b200073
+          1173574000: Illegal instruction (hart 0) at PC 0x8000a33a: 0x7b200073
+          1177418000: Illegal instruction (hart 0) at PC 0x8000a4a2: 0x7b200073
+          1180770000: Illegal instruction (hart 0) at PC 0x8000a528: 0x7b200073
+          1183624000: Illegal instruction (hart 0) at PC 0x8000a564: 0x7b200073
+          1186644000: Illegal instruction (hart 0) at PC 0x8000a578: 0x7b200073
+          1189560000: Illegal instruction (hart 0) at PC 0x8000a588: 0x7b200073
+          1193428000: Illegal instruction (hart 0) at PC 0x8000a738: 0x7b200073
+          1197196000: Illegal instruction (hart 0) at PC 0x8000a7fa: 0x7b200073
+          1200762000: Illegal instruction (hart 0) at PC 0x8000a97e: 0x7b200073
+          1203900000: Illegal instruction (hart 0) at PC 0x8000aa2e: 0x7b200073
+          1206706000: Illegal instruction (hart 0) at PC 0x8000aa4a: 0x7b200073
+          1209844000: Illegal instruction (hart 0) at PC 0x8000aab0: 0x7b200073
+          1213378000: Illegal instruction (hart 0) at PC 0x8000ab70: 0x7b200073
+          1216670000: Illegal instruction (hart 0) at PC 0x8000abd6: 0x7b200073
+          1220396000: Illegal instruction (hart 0) at PC 0x8000ad5c: 0x7b200073
+          1224466000: Illegal instruction (hart 0) at PC 0x8000ae7e: 0x7b200073
+          1231144000: Illegal instruction (hart 0) at PC 0x8000b1aa: 0x7b200073
+          1234594000: Illegal instruction (hart 0) at PC 0x8000b2d6: 0x7b200073
+          1237174000: Illegal instruction (hart 0) at PC 0x8000b2f0: 0x7b200073
+          1240608000: Illegal instruction (hart 0) at PC 0x8000b376: 0x7b200073
+          1243302000: Illegal instruction (hart 0) at PC 0x8000b38e: 0x7b200073
+          1246372000: Illegal instruction (hart 0) at PC 0x8000b454: 0x7b200073
+          1250868000: Illegal instruction (hart 0) at PC 0x8000b614: 0x7b200073
+          1257138000: Illegal instruction (hart 0) at PC 0x8000b962: 0x7b200073
+          1260038000: Illegal instruction (hart 0) at PC 0x8000b98c: 0x7b200073
+          1263486000: Illegal instruction (hart 0) at PC 0x8000ba3e: 0x7b200073
+          1266444000: Illegal instruction (hart 0) at PC 0x8000ba4e: 0x7b200073
+          1270384000: Illegal instruction (hart 0) at PC 0x8000bb9e: 0x7b200073
+          1273512000: Illegal instruction (hart 0) at PC 0x8000bc14: 0x7b200073
+          1276944000: Illegal instruction (hart 0) at PC 0x8000bce8: 0x7b200073
+          1282760000: Illegal instruction (hart 0) at PC 0x8000c010: 0x7b200073
+          1286986000: Illegal instruction (hart 0) at PC 0x8000c180: 0x7b200073
+          1291812000: Illegal instruction (hart 0) at PC 0x8000c35e: 0x7b200073
+          1295710000: Illegal instruction (hart 0) at PC 0x8000c484: 0x7b200073
+          1299156000: Illegal instruction (hart 0) at PC 0x8000c51e: 0x7b200073
+          1301756000: Illegal instruction (hart 0) at PC 0x8000c566: 0x7b200073
+          1304880000: Illegal instruction (hart 0) at PC 0x8000c5cc: 0x7b200073
+          1308728000: Illegal instruction (hart 0) at PC 0x8000c742: 0x7b200073
+          1311924000: Illegal instruction (hart 0) at PC 0x8000c7d2: 0x7b200073
+          1315270000: Illegal instruction (hart 0) at PC 0x8000c8c6: 0x7b200073
+          1318648000: Illegal instruction (hart 0) at PC 0x8000c99e: 0x7b200073
+          1322886000: Illegal instruction (hart 0) at PC 0x8000cae6: 0x7b200073
+          1326968000: Illegal instruction (hart 0) at PC 0x8000cc08: 0x7b200073
+          1329874000: Illegal instruction (hart 0) at PC 0x8000cc5a: 0x7b200073
+          1333148000: Illegal instruction (hart 0) at PC 0x8000cdd4: 0x7b200073
+          1337240000: Illegal instruction (hart 0) at PC 0x8000cf2e: 0x7b200073
+          1340838000: Illegal instruction (hart 0) at PC 0x8000d042: 0x7b200073
+          1344338000: Illegal instruction (hart 0) at PC 0x8000d270: 0x7b200073
+          1347202000: Illegal instruction (hart 0) at PC 0x8000d2d6: 0x7b200073
+          1352758000: Illegal instruction (hart 0) at PC 0x8000d686: 0x7b200073
+          1356416000: Illegal instruction (hart 0) at PC 0x8000d79a: 0x7b200073
+          1360584000: Illegal instruction (hart 0) at PC 0x8000d934: 0x7b200073
+          1363548000: Illegal instruction (hart 0) at PC 0x8000d978: 0x7b200073
+          1369696000: Illegal instruction (hart 0) at PC 0x8000f846: 0x7b200073
+          1372576000: Illegal instruction (hart 0) at PC 0x8000dada: 0x7b200073
+          1377356000: Illegal instruction (hart 0) at PC 0x8000dda2: 0x7b200073
+          1380790000: Illegal instruction (hart 0) at PC 0x8000de3e: 0x7b200073
+          1383744000: Illegal instruction (hart 0) at PC 0x8000de56: 0x7b200073
+          1387224000: Illegal instruction (hart 0) at PC 0x8000df80: 0x7b200073
+          1390768000: Illegal instruction (hart 0) at PC 0x8000e082: 0x7b200073
+          1393510000: Illegal instruction (hart 0) at PC 0x8000e106: 0x7b200073
+          1397290000: Illegal instruction (hart 0) at PC 0x8000e230: 0x7b200073
+          1399978000: Illegal instruction (hart 0) at PC 0x8000e27e: 0x7b200073
+          1404068000: Illegal instruction (hart 0) at PC 0x8000e43c: 0x7b200073
+          1407274000: Illegal instruction (hart 0) at PC 0x8000e50c: 0x7b200073
+          1410020000: Illegal instruction (hart 0) at PC 0x8000e540: 0x7b200073
+          1412974000: Illegal instruction (hart 0) at PC 0x8000e580: 0x7b200073
+          1415468000: Illegal instruction (hart 0) at PC 0x8000e594: 0x7b200073
+          1425298000: Illegal instruction (hart 0) at PC 0x8000f374: 0x7b200073
+          1428956000: Illegal instruction (hart 0) at PC 0x8000f41e: 0x7b200073
+UVM_INFO /workspace/ibex/dv/uvm/tests/core_ibex_base_test.sv(114) @ 1433693000: uvm_test_top [uvm_test_top] ECALL instruction is detected, test done
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_objection.svh(1276) @ 1439691000: reporter [TEST_DONE] 'run' phase is ready to proceed to the 'extract' phase
+
+--- RISC-V UVM TEST PASSED ---
+
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_report_catcher.svh(705) @ 1439691000: reporter [UVM/REPORT/CATCHER] 
+--- UVM Report catcher Summary ---
+
+
+Number of demoted UVM_FATAL reports  :    0
+Number of demoted UVM_ERROR reports  :    0
+Number of demoted UVM_WARNING reports:    0
+Number of caught UVM_FATAL reports   :    0
+Number of caught UVM_ERROR reports   :    0
+Number of caught UVM_WARNING reports :    0
+
+UVM_INFO $VCS_HOME/etc/uvm-1.2/base/uvm_report_server.svh(904) @ 1439691000: reporter [UVM/REPORT/SERVER] 
+--- UVM Report Summary ---
+
+** Report counts by severity
+UVM_INFO :    8
+UVM_WARNING :    0
+UVM_ERROR :    0
+UVM_FATAL :    0
+** Report counts by id
+[RNTST]     1
+[TEST_DONE]     1
+[UVM/RELNOTES]     1
+[UVM/REPORT/CATCHER]     1
+[uvm_test_top]     2
+[uvm_test_top.env.data_if_slave_agent.sequencer.data_intf_seq]     1
+[uvm_test_top.env.instr_if_slave_agent.sequencer.instr_intf_seq]     1
+
+$finish called from file "$VCS_HOME/etc/uvm-1.2/base/uvm_root.svh", line 527.
+$finish at simulation time           1439691000
+           V C S   S i m u l a t i o n   R e p o r t 
+Time: 14396910000 ps
+CPU Time:     52.160 seconds;       Data structure size:   0.8Mb
+Fri Mar 20 05:50:43 2026

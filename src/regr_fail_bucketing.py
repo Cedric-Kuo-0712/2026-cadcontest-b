@@ -147,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--method",
         default="hybrid",
-        choices=("signature", "tfidf", "hybrid", "signature_then_tfidf"),
+        choices=("signature", "tfidf", "hybrid", "signature_then_tfidf", "dbscan"),
         help="Clustering strategy (default: hybrid)",
     )
     parser.add_argument(

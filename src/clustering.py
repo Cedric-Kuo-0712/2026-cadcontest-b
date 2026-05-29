@@ -3,11 +3,46 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import re
 from typing import Iterable, Sequence
 
 import numpy as np
 
 from features import CaseFeatures, CaseSignature
+
+
+_NOISE_TOKENS = {
+    # Global routing tags are already encoded in signature distance.
+    "mode_mismatch",
+    "mode_fatal",
+    "mode_assert",
+    "mode_unknown",
+    "regr_mismatch",
+    "regr_failed_only",
+    "regr_unknown",
+    # Context marker only denotes a field boundary, not signal.
+    "ctx",
+}
+_UNIFORM_TOKEN = re.compile(r"^uniform_[0-9.]+$")
+
+
+def _preprocess_blob(text: str) -> str:
+    """Remove low-information text features before TF-IDF."""
+    if not text:
+        return text
+
+    out: list[str] = []
+    prev = ""
+    for raw in text.split():
+        tok = raw.lower()
+        if tok in _NOISE_TOKENS or _UNIFORM_TOKEN.match(tok):
+            continue
+        # De-emphasize boilerplate by collapsing immediate repeats.
+        if tok == prev:
+            continue
+        out.append(tok)
+        prev = tok
+    return " ".join(out)
 
 
 def cluster_by_signature(features: Sequence[CaseFeatures]) -> list[int]:
@@ -25,9 +60,10 @@ def _tfidf_matrix(features: Sequence[CaseFeatures]):
     from scipy.sparse import hstack
     from sklearn.feature_extraction.text import TfidfVectorizer
 
-    corpus = [
-        f.text_blob if f.text_blob else f"empty_case_{f.case_id}" for f in features
-    ]
+    corpus = []
+    for f in features:
+        text = _preprocess_blob(f.text_blob)
+        corpus.append(text if text else f"empty_case_{f.case_id}")
     # High-dimensional feature space:
     # - word n-grams capture semantic tokens (mode/fatal/assert/mismatch context)
     # - char_wb n-grams capture near-duplicate templates with slight token drift
@@ -303,6 +339,238 @@ def cluster_hybrid(features: Sequence[CaseFeatures], k: int) -> list[int]:
     return agg.fit_predict(D).tolist()
 
 
+def _labels_to_groups(labels: Sequence[int]) -> dict[int, list[int]]:
+    groups: dict[int, list[int]] = defaultdict(list)
+    for i, l in enumerate(labels):
+        groups[int(l)].append(i)
+    return groups
+
+
+def _merge_until_k(groups: dict[int, list[int]], D: np.ndarray, k: int) -> dict[int, list[int]]:
+    """Greedily merge closest clusters until k clusters remain."""
+    while len(groups) > k:
+        keys = list(groups.keys())
+        best = None
+        for a_i, ga in enumerate(keys):
+            for gb in keys[a_i + 1:]:
+                # average linkage distance between clusters
+                da = groups[ga]
+                db = groups[gb]
+                dist = float(D[np.ix_(da, db)].mean()) if da and db else 1.0
+                if best is None or dist < best[0]:
+                    best = (dist, ga, gb)
+        if best is None:
+            break
+        _, ga, gb = best
+        groups[ga] = groups[ga] + groups[gb]
+        del groups[gb]
+    return groups
+
+
+def _split_until_k(groups: dict[int, list[int]], D: np.ndarray, k: int) -> dict[int, list[int]]:
+    """Split the loosest cluster with 2-way agglomerative until k clusters."""
+    from sklearn.cluster import AgglomerativeClustering
+
+    next_id = (max(groups.keys()) + 1) if groups else 0
+    while len(groups) < k:
+        # pick cluster with largest average pairwise distance
+        worst = None
+        for gid, idxs in groups.items():
+            if len(idxs) <= 2:
+                continue
+            vals = [D[i, j] for a, i in enumerate(idxs) for j in idxs[a + 1:]]
+            if not vals:
+                continue
+            score = float(np.mean(vals))
+            if worst is None or score > worst[0]:
+                worst = (score, gid)
+        if worst is None:
+            break
+        _, gid = worst
+        idxs = groups[gid]
+        subD = D[np.ix_(idxs, idxs)]
+        sub_labels = AgglomerativeClustering(
+            n_clusters=2, metric="precomputed", linkage="average"
+        ).fit_predict(subD)
+        a = [idxs[i] for i, l in enumerate(sub_labels) if l == 0]
+        b = [idxs[i] for i, l in enumerate(sub_labels) if l == 1]
+        if not a or not b:
+            break
+        groups[gid] = a
+        groups[next_id] = b
+        next_id += 1
+    return groups
+
+
+def _assign_noise_to_nearest(groups: dict[int, list[int]], noise: list[int], D: np.ndarray) -> None:
+    """Assign DBSCAN noise points to nearest cluster by avg distance."""
+    if not noise:
+        return
+    for i in noise:
+        best = None
+        for gid, idxs in groups.items():
+            dist = float(D[i, idxs].mean()) if idxs else 1.0
+            if best is None or dist < best[0]:
+                best = (dist, gid)
+        if best is None:
+            continue
+        groups[best[1]].append(i)
+
+
+def cluster_dbscan(features: Sequence[CaseFeatures], k: int) -> list[int]:
+    """DBSCAN on the hybrid distance matrix, adapted back to exactly k buckets."""
+    from sklearn.cluster import DBSCAN
+
+    n = len(features)
+    if n == 0:
+        return []
+    if n == 1:
+        return [0]
+    k_eff = max(1, min(k, n))
+    if k_eff == 1:
+        return [0] * n
+
+    D = _build_distance_matrix(features)
+
+    # Choose eps by trying a few quantiles and picking the one that yields
+    # a cluster count closest to k (without using golden labels).
+    tri = D[np.triu_indices(n, 1)]
+    tri = tri[np.isfinite(tri)]
+    if tri.size == 0:
+        return [0] * n
+
+    candidate_q = (0.05, 0.08, 0.10, 0.12, 0.15, 0.18, 0.22, 0.26)
+    best = None
+    best_labels = None
+    for q in candidate_q:
+        eps = float(np.clip(np.quantile(tri, q), 0.05, 0.85))
+        lab = DBSCAN(eps=eps, min_samples=2, metric="precomputed").fit_predict(D)
+        n_clusters = len({x for x in lab.tolist() if x != -1})
+        n_noise = int(np.sum(lab == -1))
+        score = (abs(n_clusters - k_eff), n_noise, -n_clusters, eps)
+        if best is None or score < best:
+            best = score
+            best_labels = lab
+
+    labels = best_labels if best_labels is not None else DBSCAN(
+        eps=float(np.clip(np.quantile(tri, 0.12), 0.05, 0.85)),
+        min_samples=2,
+        metric="precomputed",
+    ).fit_predict(D)
+
+    groups = _labels_to_groups(labels.tolist())
+    noise = groups.pop(-1, [])
+
+    # Remove empty/noise-only result.
+    if not groups:
+        return cluster_hybrid(features, k_eff)
+
+    # Assign noise to nearest existing cluster.
+    _assign_noise_to_nearest(groups, noise, D)
+
+    # Adapt number of clusters to k.
+    if len(groups) > k_eff:
+        groups = _merge_until_k(groups, D, k_eff)
+    elif len(groups) < k_eff:
+        groups = _split_until_k(groups, D, k_eff)
+
+    # Emit labels 0..k-1
+    out = [-1] * n
+    for new_id, (_, idxs) in enumerate(sorted(groups.items(), key=lambda kv: min(kv[1]))):
+        for i in idxs:
+            out[i] = new_id
+    # Any leftover (shouldn't happen) -> 0
+    out = [0 if x < 0 else x for x in out]
+    return out
+
+
+def _count_matrix(features: Sequence[CaseFeatures]):
+    """Count-based text features (paper-style) from preprocessed blobs."""
+    from sklearn.feature_extraction.text import CountVectorizer
+
+    corpus = []
+    for f in features:
+        text = _preprocess_blob(f.text_blob)
+        corpus.append(text if text else f"empty_case_{f.case_id}")
+
+    vec = CountVectorizer(
+        lowercase=True,
+        ngram_range=(1, 2),
+        min_df=1,
+        max_df=1.0,
+        token_pattern=r"[A-Za-z_][A-Za-z0-9_<>]+",
+    )
+    return vec.fit_transform(corpus)
+
+
+def cluster_dbscan_pca(features: Sequence[CaseFeatures], k: int) -> list[int]:
+    """Paper-style clustering: (count features) -> PCA/SVD -> DBSCAN -> adapt to K."""
+    from sklearn.cluster import DBSCAN
+    from sklearn.decomposition import TruncatedSVD
+    from sklearn.preprocessing import StandardScaler
+
+    n = len(features)
+    if n == 0:
+        return []
+    if n == 1:
+        return [0]
+    k_eff = max(1, min(k, n))
+    if k_eff == 1:
+        return [0] * n
+
+    X = _count_matrix(features)  # sparse
+    n_comp = int(min(50, max(2, n - 1), X.shape[1] - 1 if X.shape[1] > 2 else 2))
+    Z = TruncatedSVD(n_components=n_comp, random_state=42).fit_transform(X)
+    Z = StandardScaler().fit_transform(Z)
+
+    # eps selection using k-NN distance quantiles (k=min_samples).
+    min_samples = 2
+    # pairwise distances are cheap at our N; use Euclidean.
+    diffs = Z[:, None, :] - Z[None, :, :]
+    dist = np.sqrt(np.sum(diffs * diffs, axis=2))
+    np.fill_diagonal(dist, np.inf)
+    kdist = np.sort(dist, axis=1)[:, min_samples - 1]
+
+    candidate_q = (0.20, 0.30, 0.40, 0.50, 0.60, 0.70)
+    best = None
+    best_labels = None
+    for q in candidate_q:
+        eps = float(np.clip(np.quantile(kdist, q), 0.05, 5.0))
+        lab = DBSCAN(eps=eps, min_samples=min_samples, metric="euclidean").fit_predict(Z)
+        n_clusters = len({x for x in lab.tolist() if x != -1})
+        n_noise = int(np.sum(lab == -1))
+        score = (abs(n_clusters - k_eff), n_noise, -n_clusters, eps)
+        if best is None or score < best:
+            best = score
+            best_labels = lab
+
+    labels = best_labels if best_labels is not None else DBSCAN(
+        eps=float(np.clip(np.quantile(kdist, 0.5), 0.05, 5.0)),
+        min_samples=min_samples,
+        metric="euclidean",
+    ).fit_predict(Z)
+
+    groups = _labels_to_groups(labels.tolist())
+    noise = groups.pop(-1, [])
+    if not groups:
+        # fallback to hybrid if DBSCAN degenerates
+        return cluster_hybrid(features, k_eff)
+
+    # Use hybrid distance matrix for robust merging/splitting/noise assignment.
+    D = _build_distance_matrix(features)
+    _assign_noise_to_nearest(groups, noise, D)
+    if len(groups) > k_eff:
+        groups = _merge_until_k(groups, D, k_eff)
+    elif len(groups) < k_eff:
+        groups = _split_until_k(groups, D, k_eff)
+
+    out = [-1] * n
+    for new_id, (_, idxs) in enumerate(sorted(groups.items(), key=lambda kv: min(kv[1]))):
+        for i in idxs:
+            out[i] = new_id
+    out = [0 if x < 0 else x for x in out]
+    return out
+
 def _centroid(rows: np.ndarray) -> np.ndarray:
     c = rows.mean(axis=0)
     n = np.linalg.norm(c)
@@ -372,6 +640,10 @@ def cluster(features: Sequence[CaseFeatures], k: int, method: str) -> list[int]:
         return cluster_hybrid(features, k)
     if method == "signature_then_tfidf":
         return cluster_signature_then_tfidf(features, k)
+    if method == "dbscan":
+        return cluster_dbscan(features, k)
+    if method == "dbscan_pca":
+        return cluster_dbscan_pca(features, k)
     raise ValueError(f"Unknown clustering method: {method!r}")
 
 
