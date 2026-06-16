@@ -136,6 +136,8 @@ _RE_MISMATCH_COUNTS = re.compile(
 )
 _RE_REGR_FAILED = re.compile(r"^([A-Za-z0-9_.]+)\s*:\s*\[FAILED\]")
 _RE_UVM_FATAL = re.compile(r"UVM_FATAL\b.*")
+_RE_UVM_FATAL_REPORT = re.compile(r"UVM_FATAL\s+\S+\.sv\(\d+\)")
+_RE_UVM_FATAL_SUMMARY = re.compile(r"^UVM_FATAL\s*:\s*\d+\s*$")
 _RE_UVM_ERROR = re.compile(r"UVM_ERROR\b.*")
 _RE_FATAL_SOURCE = re.compile(r"UVM_FATAL\s+(\S+?\.sv)\b")
 _RE_VERDICT_PASS = re.compile(r"RISC-V UVM TEST PASSED")
@@ -147,13 +149,56 @@ _RE_TRACE_LINE = re.compile(
     r"^\s*(\d+)\s+(\d+)\s+([0-9a-fA-F]+)\s+([0-9a-fA-F]+)\s+(\S+)"
 )
 
+# Ibex UVM_FATAL templates (core_ibex_base_test.sv, core_ibex_test_lib.sv,
+# ibex_cosim_scoreboard.sv).  Order matters: more specific rules first.
 _FATAL_KIND_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
+    # core_ibex_base_test.sv — simulation / wall-clock limits
+    ("wall_clock_timeout", re.compile(r"wall-clock timeout", re.I)),
+    ("test_timeout", re.compile(r"TEST TIMEOUT!!", re.I)),
     ("debug_timeout", re.compile(r"IN_DEBUG_MODE", re.I)),
     ("irq_timeout", re.compile(r"HANDLING_IRQ", re.I)),
-    ("no_dret", re.compile(r"No dret detected", re.I)),
+    ("csr_timeout", re.compile(r"Did not receive write to csr", re.I)),
+    ("core_status_timeout", re.compile(r"Did not receive core_status", re.I)),
+    # core_ibex_base_test.sv — RISCV-DV handshake / signature protocol
+    ("handshake_test_fail", re.compile(r"RISCV-DV handshake \(payload=TEST_FAIL\)", re.I)),
+    ("handshake_malformed", re.compile(r"Incorrectly formed handshake", re.I)),
+    ("bad_signature_format", re.compile(r"signature address is formatted incorrectly", re.I)),
+    ("double_fault", re.compile(r"double_fault detector", re.I)),
+    # core_ibex_test_lib.sv — CSR / signature checks
+    ("check_memory", re.compile(r"memory fault", re.I)),
     ("check_mcause", re.compile(r"Check failed mcause", re.I)),
     ("check_signature", re.compile(r"Check failed signature_data", re.I)),
-    ("check_memory", re.compile(r"memory fault", re.I)),
+    ("no_dret", re.compile(r"No dret detected", re.I)),
+    ("no_mret", re.compile(r"No mret detected", re.I)),
+    ("check_priv_mode", re.compile(r"Check failed.*Incorrect privilege mode", re.I)),
+    ("debug_ebreak_init", re.compile(
+        r"EBreak seen whilst doing initial debug initialization", re.I)),
+    ("debug_ebreak", re.compile(
+        r"Core did not enter debug mode after execution of ebreak", re.I)),
+    ("irq_in_debug", re.compile(r"Core is handling interrupt detected in debug mode", re.I)),
+    ("illegal_instr", re.compile(r"Illegal instruction detected", re.I)),
+    ("invalid_xret", re.compile(r"Invalid xRET instruction", re.I)),
+    ("invalid_compressed", re.compile(
+        r"Invalid C1 compressed|Illegal C2 compressed|Instruction is not compressed",
+        re.I,
+    )),
+    ("dcsr_priv", re.compile(r"dcsr\.prv is an unsupported privilege mode", re.I)),
+    # ibex_cosim_scoreboard.sv — co-simulation scoreboard
+    ("cosim_reg_write", re.compile(r"Cosim mismatch Register write data mismatch", re.I)),
+    ("cosim_reg_missing", re.compile(r"Cosim mismatch DUT didn't write to register", re.I)),
+    ("cosim_trap", re.compile(r"Cosim mismatch Synchronous trap", re.I)),
+    ("cosim_mem_access", re.compile(
+        r"Cosim mismatch (?:DUT generated|A store at address|load at address)", re.I)),
+    ("cosim_pc", re.compile(r"Cosim mismatch PC mismatch", re.I)),
+    ("cosim_mismatch", re.compile(r"Cosim mismatch", re.I)),
+    # core_ibex_test_lib.sv — PLI / HDL access (Questa/VCS visibility issues)
+    ("hdl_read_fail", re.compile(r"Check failed \(uvm_hdl_read", re.I)),
+    # Environment / testbench setup
+    ("env_setup", re.compile(
+        r"Cannot get (?:RV32|clk_if|dut_if|instr_monitor_if|csr_if)", re.I)),
+    ("missing_binary", re.compile(r"Please specify test binary", re.I)),
+    ("cannot_open_file", re.compile(r"Cannot open file", re.I)),
+    ("base_class_stub", re.compile(r"Base class task should not be used", re.I)),
 )
 
 _SIM_MAX_BYTES = 50 * 1024 * 1024
@@ -264,6 +309,15 @@ def extract_regr(path: str, *, kind: str | None = None) -> dict:
 # sim.log
 # ---------------------------------------------------------------------------
 
+def _is_uvm_fatal_report(line: str) -> bool:
+    """True for real UVM report lines, not summary/meta lines."""
+    if "UVM_FATAL reports" in line:
+        return False
+    if _RE_UVM_FATAL_SUMMARY.match(line.strip()):
+        return False
+    return bool(_RE_UVM_FATAL_REPORT.search(line))
+
+
 def _classify_fatal(raw: str, normalized: str) -> str:
     for kind, pat in _FATAL_KIND_RULES:
         if pat.search(raw) or pat.search(normalized):
@@ -306,9 +360,8 @@ def extract_sim(path: str) -> dict:
                     result["verdict"] = "passed"
                 elif _RE_VERDICT_FAIL.search(line):
                     result["verdict"] = "failed"
-                fm = _RE_UVM_FATAL.search(line)
-                if fm and not fatal_raw:
-                    fatal_raw = fm.group(0)
+                if _is_uvm_fatal_report(line) and not fatal_raw:
+                    fatal_raw = line.rstrip("\n")
                     fatal_norm = normalize_message(fatal_raw)
                     fatal_norm = re.sub(
                         r"^UVM_FATAL\s+<PATH>\(<N>\)\s*", "UVM_FATAL ", fatal_norm

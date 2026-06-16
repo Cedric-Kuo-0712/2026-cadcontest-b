@@ -1,0 +1,34 @@
+name: Build Linux submission
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master, bsc/v1]
+    paths:
+      - 'src/**'
+      - 'requirements.txt'
+      - 'regr_fail_bucketing.spec'
+      - 'build_submission.sh'
+      - '.github/workflows/build-linux.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Build submission
+        run: |
+          pip install -r requirements.txt pyinstaller
+          ./build_submission.sh
+
+      - name: Upload Linux binary package
+        uses: actions/upload-artifact@v4
+        with:
+          name: submission-linux
+          path: submission/
+          retention-days: 14

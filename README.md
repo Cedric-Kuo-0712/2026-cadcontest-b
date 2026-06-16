@@ -3,9 +3,10 @@
 Team ID: cadb1053
 Team Name: bububusc
 Team Members:
-- B11901047 郭祐嘉 — tankkuo0712@gmail.com
-- B11901043 張庭碩 — timmychang104@gmail.com
-- B11901112 卜紹秦 — pushaochin@gmail.com
+
+- B11901047 郭祐嘉 — [tankkuo0712@gmail.com](mailto:tankkuo0712@gmail.com)
+- B11901043 張庭碩 — [timmychang104@gmail.com](mailto:timmychang104@gmail.com)
+- B11901112 卜紹秦 — [pushaochin@gmail.com](mailto:pushaochin@gmail.com)
 
 ---
 
@@ -82,24 +83,61 @@ sim.log（failed_only 路徑）
 
 `sim_fatal_kind` 由第一條 `UVM_FATAL` 訊息正規化後，依序匹配：
 
-| `sim_fatal_kind`   | 關鍵字 / 模式              |
-|--------------------|----------------------------|
-| `debug_timeout`    | `IN_DEBUG_MODE`            |
-| `irq_timeout`      | `HANDLING_IRQ`             |
-| `no_dret`          | `No dret detected`         |
-| `check_mcause`     | `Check failed mcause`      |
-| `check_signature`  | `Check failed signature_data` |
-| `check_memory`     | `memory fault`             |
-| `other_fatal`      | 其他 UVM_FATAL             |
+
+| `sim_fatal_kind` | 關鍵字 / 模式 |
+| ---------------- | ------------- |
+| **Timeouts** | |
+| `wall_clock_timeout` | `wall-clock timeout` |
+| `test_timeout` | `TEST TIMEOUT!!` |
+| `debug_timeout` | `IN_DEBUG_MODE` |
+| `irq_timeout` | `HANDLING_IRQ` |
+| `csr_timeout` | `Did not receive write to csr` |
+| `core_status_timeout` | other `Did not receive core_status` |
+| **Signature / handshake** | |
+| `handshake_test_fail` | `RISCV-DV handshake (payload=TEST_FAIL)` |
+| `handshake_malformed` | `Incorrectly formed handshake` |
+| `bad_signature_format` | `signature address is formatted incorrectly` |
+| `double_fault` | `double_fault detector` |
+| **CSR / status checks** | |
+| `check_memory` | `memory fault` |
+| `check_mcause` | `Check failed mcause` |
+| `check_signature` | `Check failed signature_data` |
+| `check_priv_mode` | `Check failed ... Incorrect privilege mode` |
+| **Debug / trap flow** | |
+| `no_dret` / `no_mret` | `No dret/mret detected` |
+| `debug_ebreak` | `Core did not enter debug mode after execution of ebreak` |
+| `debug_ebreak_init` | `EBreak seen whilst doing initial debug initialization` |
+| `irq_in_debug` | `Core is handling interrupt detected in debug mode` |
+| `illegal_instr` | `Illegal instruction detected` |
+| `invalid_xret` | `Invalid xRET instruction` |
+| `invalid_compressed` | invalid / illegal compressed instruction |
+| `dcsr_priv` | `dcsr.prv is an unsupported privilege mode` |
+| **Co-simulation** | |
+| `cosim_reg_write` | register write data mismatch |
+| `cosim_reg_missing` | DUT didn't write expected register |
+| `cosim_trap` | synchronous trap mismatch |
+| `cosim_mem_access` | load/store access mismatch |
+| `cosim_pc` | PC mismatch |
+| `cosim_mismatch` | other `Cosim mismatch` |
+| **Other** | |
+| `hdl_read_fail` | `Check failed (uvm_hdl_read` |
+| `env_setup` | `Cannot get RV32*/clk_if/dut_if/...` |
+| `missing_binary` | `Please specify test binary` |
+| `cannot_open_file` | `Cannot open file` |
+| `base_class_stub` | `Base class task should not be used` |
+| `other_fatal` | unmatched UVM_FATAL report |
+
 
 ### Step 3 — Per-mode features（`CaseSignature` + `text_blob`）
 
-| `failure_mode` | 主要欄位 | `text_blob` 重點 token |
-|----------------|----------|-------------------------|
-| `mismatch` | `mismatch_ibex/spike_mnemonic`, `mismatch_context_mnemonics`, `early_mismatch`, `same_reg_pair`, `has_signature_loop`, `trace_length_bucket`, tail 統計 | `IBEX_*`, `SPIKE_*`, `PAIR_*`, `RETIRE_*`, `CTX ...` |
-| `fatal` | `sim_fatal_kind`, `sim_fatal_source`, `regr_test_name`, `sim_uvm_testname` | `FATAL_*`, `REGRTEST_*` |
-| `assert` | `sim_error_asserts`, `sim_fatal_kind`（通常空） | `ASSERT_*`（名稱重複加權） |
-| `unknown` | 上述能抓到的都填 | `MODE_unknown` + 少量 sim 片段 |
+
+| `failure_mode` | 主要欄位                                                                                                                                                  | `text_blob` 重點 token                                 |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `mismatch`     | `mismatch_ibex/spike_mnemonic`, `mismatch_context_mnemonics`, `early_mismatch`, `same_reg_pair`, `has_signature_loop`, `trace_length_bucket`, tail 統計 | `IBEX_*`, `SPIKE_*`, `PAIR_*`, `RETIRE_*`, `CTX ...` |
+| `fatal`        | `sim_fatal_kind`, `sim_fatal_source`, `regr_test_name`, `sim_uvm_testname`                                                                            | `FATAL_*`, `REGRTEST_*`                              |
+| `assert`       | `sim_error_asserts`, `sim_fatal_kind`（通常空）                                                                                                            | `ASSERT_*`（名稱重複加權）                                   |
+| `unknown`      | 上述能抓到的都填                                                                                                                                              | `MODE_unknown` + 少量 sim 片段                           |
+
 
 **Mismatch 專用啟發式**
 
@@ -171,12 +209,46 @@ categorical_key 相同 → 強制 D[i,j] = 0
 
 ### Module map
 
-| File | Role |
-|------|------|
-| `src/features.py` | `extract_regr` / `extract_sim` / `extract_trace` → `build_case_features` |
-| `src/clustering.py` | Distance functions + `cluster()` strategies |
-| `src/regr_fail_bucketing.py` | CLI；`--workers` 平行萃取特徵 |
-| `eval.py` | Pairwise balanced accuracy vs `golden.csv` |
+
+| File                         | Role                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `src/features.py`            | `extract_regr` / `extract_sim` / `extract_trace` → `build_case_features` |
+| `src/clustering.py`          | Distance functions + `cluster()` strategies                              |
+| `src/regr_fail_bucketing.py` | CLI；`--workers` 平行萃取特徵                                                   |
+| `eval.py`                    | Pairwise balanced accuracy vs `golden.csv`                               |
+
+
+## Submission (Option A)
+
+Build the contest package (PyInstaller binary + source fallback):
+
+```bash
+./build_submission.sh
+```
+
+This produces:
+
+```
+submission/
+├── regr_fail_bucketing    # PyInstaller executable (run this on the judge machine)
+├── README.md
+├── requirements.txt
+└── src/                   # source fallback if the binary fails
+    ├── regr_fail_bucketing.py
+    ├── features.py
+    └── clustering.py
+```
+
+Upload `**submission.zip**` (or the `submission/` folder contents) to the contest portal.
+
+**Important:** PyInstaller binaries are OS-specific. The build above targets **macOS x86_64**.
+If the evaluator runs **Linux**, rebuild on a Linux machine (or Docker) with the same script
+before final submission. The included `src/` + `requirements.txt` let judges fall back to:
+
+```bash
+pip install -r requirements.txt
+python3 src/regr_fail_bucketing.py --input … --output … --k …
+```
 
 ## Install
 
@@ -195,6 +267,7 @@ python3 src/regr_fail_bucketing.py \
 ```
 
 Options:
+
 - `--method {signature,tfidf,hybrid,signature_then_tfidf,dbscan}` — default `hybrid`.
 - `--seed N` — random seed (default 42).
 - `-v` / `--verbose` — print per-bucket diagnostics to stderr.
@@ -217,10 +290,12 @@ python3 eval.py \
 
 ### Scores on the public samples (`hybrid`)
 
-| Benchmark | N  | K | Balanced Accuracy | Notes |
-|-----------|----|---|-------------------|-------|
-| Set 1     | 9  | 2 | 0.475             | Cases 5 & 9 share identical sim/regr templates across bugs |
-| Set 2     | 27 | 4 | **1.00**         | bug_107/2014/7021 perfect; bug_234 case 22 fixed; case 23 merges with 107 |
+
+| Benchmark | N   | K   | Balanced Accuracy | Notes                                                                     |
+| --------- | --- | --- | ----------------- | ------------------------------------------------------------------------- |
+| Set 1     | 9   | 2   | 0.475             | Cases 5 & 9 share identical sim/regr templates across bugs                |
+| Set 2     | 27  | 4   | **1.00**          | bug_107/2014/7021 perfect; bug_234 case 22 fixed; case 23 merges with 107 |
+
 
 Set 1 is limited by cases that share identical UVM timeout templates, test
 names, and bins across different bugs (e.g. bug_304 case 5 vs bug_7023 case 9).

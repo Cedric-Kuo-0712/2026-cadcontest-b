@@ -130,12 +130,34 @@ def _fatal_kind_distance(ka: str, kb: str) -> float:
         return 0.0
     if ka == "no_dret" or kb == "no_dret":
         return 1.0
-    timeout_kinds = {"debug_timeout", "irq_timeout"}
-    if ka in timeout_kinds and kb in timeout_kinds:
+
+    timeout_kinds = {
+        "debug_timeout", "irq_timeout", "core_status_timeout", "csr_timeout",
+        "wall_clock_timeout", "test_timeout",
+    }
+    check_kinds = {
+        "check_signature", "check_memory", "check_mcause", "check_priv_mode",
+    }
+    cosim_kinds = {
+        "cosim_mismatch", "cosim_reg_write", "cosim_reg_missing", "cosim_trap",
+        "cosim_mem_access", "cosim_pc",
+    }
+    debug_kinds = {"debug_ebreak", "debug_ebreak_init", "irq_in_debug", "dcsr_priv"}
+    ret_kinds = {"no_dret", "no_mret"}
+
+    def _in_same_group(a: str, b: str, group: set[str]) -> bool:
+        return a in group and b in group
+
+    if _in_same_group(ka, kb, timeout_kinds):
         return 0.45
-    check_kinds = {"check_signature", "check_memory", "check_mcause"}
-    if ka in check_kinds and kb in check_kinds:
+    if _in_same_group(ka, kb, check_kinds):
         return 0.35
+    if _in_same_group(ka, kb, cosim_kinds):
+        return 0.40
+    if _in_same_group(ka, kb, debug_kinds):
+        return 0.50
+    if _in_same_group(ka, kb, ret_kinds):
+        return 0.30
     if ka in timeout_kinds and kb in check_kinds:
         return 0.55
     if ka in check_kinds and kb in timeout_kinds:
