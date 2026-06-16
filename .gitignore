@@ -8,5 +8,4 @@ dist/
 submission/
 submission.zip
 *.spec
-build_*.sh
 Dockerfile.linux
