@@ -3,9 +3,10 @@ __pycache__/
 *.pyo
 .venv/
 .DS_Store
-build/
-dist/
+
 submission/
-submission.zip
-*.spec
-Dockerfile.linux
+
+# Build tooling (run_and_eval.sh is kept in repo)
+
+# Slides & presentation
+presentation/
