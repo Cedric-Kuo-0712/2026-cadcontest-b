@@ -33,14 +33,10 @@ efficient, use the alternate contact listed below (team lead).
 
 | Student ID | Name            | Email                                                     | Other contact (Line / FB / Phone)                                                    |
 | ---------- | --------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| B11901047  | 郭祐嘉             | [tankkuo0712@gmail.com](mailto:tankkuo0712@gmail.com)     |                                                                                      |
-| B11901043  | 張庭碩             | [timmychang104@gmail.com](mailto:timmychang104@gmail.com) |                                                                                      |
+| B11901047  | 郭祐嘉             | [tankkuo0712@gmail.com](mailto:tankkuo0712@gmail.com)     | Facebook: [profile link](https://www.facebook.com/share/1PGd9RYcue/?mibextid=wwXIfr) |                                                                                       |
+| B11901043  | 張庭碩             | [timmychang104@gmail.com](mailto:timmychang104@gmail.com) |Facebook: [profile link](https://www.facebook.com/share/1Ex8UEi8jm/?mibextid=wwXIfr) |                                                                                      |
 | B11901112  | 卜紹秦 (team lead) | [pushaochin@gmail.com](mailto:pushaochin@gmail.com)       | Facebook: [profile link](https://www.facebook.com/share/1JCcT5MPpo/?mibextid=wwXIfr) |
 
-
-> **Note:** Please fill in Line / phone / FB handles for all members before final submission.
-
----
 
 ## 2. Introduction
 
@@ -533,7 +529,7 @@ sim.log（failed_only 路徑）
 
 | `failure_mode` | 主要欄位                                                                                                                                                  | `text_blob` 重點 token                                 |
 | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `mismatch`     | `mismatch_ibex/spike_mnemonic`, `mismatch_context_mnemonics`, `early_mismatch`, `same_reg_pair`, `has_signature_loop`, `trace_length_bucket`, tail 統計 | `IBEX_`*, `SPIKE_*`, `PAIR_*`, `RETIRE_*`, `CTX ...` |
+| `mismatch`     | `mismatch_ibex/spike_mnemonic`, `mismatch_context_mnemonics`, `early_mismatch`, `same_reg_pair`, `has_signature_loop`, `trace_length_bucket`, tail 統計 | `IBEX_`*, `SPIKE_`*, `PAIR_*`, `RETIRE_*`, `CTX ...` |
 | `fatal`        | `sim_fatal_kind`, `sim_fatal_source`, `regr_test_name`, `sim_uvm_testname`                                                                            | `FATAL_*`, `REGRTEST_*`                              |
 | `assert`       | `sim_error_asserts`, `sim_fatal_kind`（通常空）                                                                                                            | `ASSERT_*`（名稱重複加權）                                   |
 | `unknown`      | 上述能抓到的都填                                                                                                                                              | `MODE_unknown` + 少量 sim 片段                           |
